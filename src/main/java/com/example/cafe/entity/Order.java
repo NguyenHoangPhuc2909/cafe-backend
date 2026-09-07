@@ -28,4 +28,7 @@ public class Order {
 
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
+
+  @Column(name = "note", columnDefinition = "TEXT")
+  private String note;
 }
