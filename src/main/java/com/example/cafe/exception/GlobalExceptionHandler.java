@@ -2,6 +2,7 @@ package com.example.cafe.exception;
 
 import com.example.cafe.dto.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -36,5 +37,18 @@ public class GlobalExceptionHandler {
         .build();
 
     return ResponseEntity.status(errorCode.getStatus()).body(apiResponse);
+  }
+
+  // 3. Xử lý lỗi Validation (dữ liệu gửi lên không thỏa mãn @Valid)
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException e) {
+    String errorMessage = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+
+    ApiResponse<Void> apiResponse = ApiResponse.<Void>builder()
+        .success(false)
+        .message(errorMessage)
+        .build();
+
+    return ResponseEntity.badRequest().body(apiResponse);
   }
 }
