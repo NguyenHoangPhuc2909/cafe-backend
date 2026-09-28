@@ -10,7 +10,10 @@ public enum ErrorCode {
   PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm"),
   FIELD_REQUIRED(HttpStatus.BAD_REQUEST, "Vui lòng nhập đầy đủ thông tin bắt buộc"),
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"),
-  ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng");
+  ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng"),
+  USERNAME_EXISTED(HttpStatus.BAD_REQUEST, "Tên đăng nhập đã tồn tại"),
+  EMAIL_EXISTED(HttpStatus.BAD_REQUEST, "Email đã được sử dụng"),
+  INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Tên đăng nhập hoặc mật khẩu không chính xác");
 
   private final HttpStatus status;
   private final String message;

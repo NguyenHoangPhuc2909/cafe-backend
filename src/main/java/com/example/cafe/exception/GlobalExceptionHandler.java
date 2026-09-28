@@ -28,6 +28,7 @@ public class GlobalExceptionHandler {
   // 2. Xử lý những lỗi hệ thống chung chung (VD: Lỗi null pointer,...) chưa lường trước được
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception e) {
+    e.printStackTrace();
     // Gán thành lỗi hệ thống không xác định
     ErrorCode errorCode = ErrorCode.UNCATEGORIZED_EXCEPTION;
 
