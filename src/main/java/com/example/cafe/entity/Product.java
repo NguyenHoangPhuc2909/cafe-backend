@@ -35,4 +35,11 @@ public class Product {
 
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "product_type", nullable = false)
+  private ProductType productType = ProductType.MADE_TO_ORDER;
+
+  @Column(name = "stock_quantity")
+  private Integer stockQuantity = 0;
 }
