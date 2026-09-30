@@ -14,14 +14,16 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up JDK 21
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
 
     - name: Build and Test with Maven
-      run: ./mvnw clean package -DskipTests
+      run: |
+        chmod +x mvnw
+        ./mvnw clean package -DskipTests
       # Lưu ý: Tạm thời bỏ qua test bằng -DskipTests, bạn có thể xóa -DskipTests khi đã viết xong Unit Test
 
   docker-build-push:
