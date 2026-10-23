@@ -39,7 +39,7 @@ public class OrderServiceImpl implements OrderService {
   private final RecipeRepository recipeRepository;
   private final IngredientRepository ingredientRepository;
 
-  private static final Duration PAYMENT_TIMEOUT = Duration.ofMinutes(5);
+  private static final Duration PAYMENT_TIMEOUT = Duration.ofMinutes(3);
 
   private TableSession resolveGuestSessionForOrder(String token) {
 
@@ -165,8 +165,7 @@ public class OrderServiceImpl implements OrderService {
 
       if (price == null || price.signum() < 0) {
         throw new AppException(
-            ErrorCode.PRODUCT_CONFIGURATION_INVALID
-        );
+            ErrorCode.PRODUCT_CONFIGURATION_INVALID);
       }
 
       totalAmount = totalAmount.add(price.multiply(BigDecimal.valueOf(quantity)));
@@ -181,8 +180,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     if (totalAmount.compareTo(
-        new BigDecimal("9999999999.99")
-    ) > 0) {
+        new BigDecimal("9999999999.99")) > 0) {
       throw new AppException(ErrorCode.INVALID_ORDER_TOTAL);
     }
 
@@ -194,8 +192,7 @@ public class OrderServiceImpl implements OrderService {
     order.setTotalAmount(totalAmount);
     order.setNote(request.getNote());
     order.setPaymentExpiresAt(
-        Instant.now().plus(PAYMENT_TIMEOUT)
-    );
+        Instant.now().plus(PAYMENT_TIMEOUT));
 
     order = orderRepository.save(order);
 
@@ -210,168 +207,278 @@ public class OrderServiceImpl implements OrderService {
     reserveStock(order, products, quantities, ingredients, requirements);
 
     return OrderMapper.toResponse(order, savedItems);
-}
-
-@Override
-public OrderResponse getOrderById(Long id) {
-  Order order = orderRepository.findById(id)
-      .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-
-  List<OrderItem> orderItems = orderItemRepository.findByOrderId(id);
-  return OrderMapper.toResponse(order, orderItems);
-}
-
-private Map<Long, Integer> collectQuantities(GuestOrderRequest request) {
-  Map<Long, Integer> quantities = new TreeMap<>();
-
-  try {
-    for (GuestOrderRequest.ItemRequest item : request.getItems()) {
-      quantities.merge(
-          item.getProductId(),
-          item.getQuantity(),
-          (current, extra) -> Math.addExact(current, extra));
-    }
-  } catch (ArithmeticException exception) {
-    throw new AppException(ErrorCode.INVALID_ORDER_QUANTITY);
-  }
-  return quantities;
-}
-
-private Map<Long, Product> lockProducts(Map<Long, Integer> quantities) {
-  Map<Long, Product> products = new TreeMap<>();
-
-  for (Long productId : new TreeMap<>(quantities).keySet()) {
-
-    Product product = productRepository.findByIdForUpdate(productId)
-        .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-
-    if (!Boolean.TRUE.equals(product.getIsActive())) {
-      throw new AppException(ErrorCode.PRODUCT_INACTIVE);
-    }
-
-    products.put(productId, product);
   }
 
-  return products;
-}
+  @Override
+  @Transactional
+  public boolean expireUnpaidOrder(Long orderId) {
+    // Khóa đơn trước khi kiểm tra trạng thái
+    Order order = orderRepository.findByIdForUpdate(orderId)
+        .orElse(null);
 
-private Map<Long, Double> collectIngredientRequirements(Map<Long, Product> products, Map<Long, Integer> quantities) {
-  Map<Long, Double> requirements = new TreeMap<>();
-  for (Product product : products.values()) {
-    if (product.getProductType() == ProductType.PACKAGED) {
-      continue;
+    if (order == null) {
+      return false;
     }
 
-    if (product.getProductType() != ProductType.MADE_TO_ORDER) {
-      throw new AppException(ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+    // Chỉ xử lý đơn bàn đang chờ thanh toán
+    if (order.getTableSession() == null || !"PENDING".equals(order.getStatus())
+        || order.getPaymentStatus() != OrderPaymentStatus.UNPAID || order.getPaymentExpiresAt() == null) {
+      return false;
     }
 
-    List<Recipe> recipes = recipeRepository.findByProductId(product.getId());
-
-    if (recipes.isEmpty()) {
-      throw new AppException(ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+    // Chưa tới hạn thì chưa hoàn kho
+    if (order.getPaymentExpiresAt().isAfter(Instant.now())) {
+      return false;
     }
 
-    for (Recipe recipe : recipes) {
-      Double amountPerItem = recipe.getQuantity();
+    releaseStock(order);
+    order.setStatus("EXPIRED");
+    return true;
+  }
 
-      if (amountPerItem == null
-          || !Double.isFinite(amountPerItem)
-          || amountPerItem <= 0
-          || recipe.getIngredient() == null
-          || recipe.getIngredient().getId() == null) {
-        throw new AppException(
-            ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+  @Override
+  public OrderResponse getOrderById(Long id) {
+    Order order = orderRepository.findById(id)
+        .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+    List<OrderItem> orderItems = orderItemRepository.findByOrderId(id);
+    return OrderMapper.toResponse(order, orderItems);
+  }
+
+  private Map<Long, Integer> collectQuantities(GuestOrderRequest request) {
+    Map<Long, Integer> quantities = new TreeMap<>();
+
+    try {
+      for (GuestOrderRequest.ItemRequest item : request.getItems()) {
+        quantities.merge(
+            item.getProductId(),
+            item.getQuantity(),
+            (current, extra) -> Math.addExact(current, extra));
+      }
+    } catch (ArithmeticException exception) {
+      throw new AppException(ErrorCode.INVALID_ORDER_QUANTITY);
+    }
+    return quantities;
+  }
+
+  private Map<Long, Product> lockProducts(Map<Long, Integer> quantities) {
+    Map<Long, Product> products = new TreeMap<>();
+
+    for (Long productId : new TreeMap<>(quantities).keySet()) {
+
+      Product product = productRepository.findByIdForUpdate(productId)
+          .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+      if (!Boolean.TRUE.equals(product.getIsActive())) {
+        throw new AppException(ErrorCode.PRODUCT_INACTIVE);
       }
 
-      Long ingredientId = recipe.getIngredient().getId();
-      double totalRequired = requirements.getOrDefault(ingredientId, 0.0)
-          + amountPerItem * quantities.get(product.getId());
+      products.put(productId, product);
+    }
 
-      if (!Double.isFinite(totalRequired)) {
-        throw new AppException(
-            ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+    return products;
+  }
+
+  private Map<Long, Double> collectIngredientRequirements(Map<Long, Product> products, Map<Long, Integer> quantities) {
+    Map<Long, Double> requirements = new TreeMap<>();
+    for (Product product : products.values()) {
+      if (product.getProductType() == ProductType.PACKAGED) {
+        continue;
       }
 
-      requirements.put(ingredientId, totalRequired);
+      if (product.getProductType() != ProductType.MADE_TO_ORDER) {
+        throw new AppException(ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+      }
+
+      List<Recipe> recipes = recipeRepository.findByProductId(product.getId());
+
+      if (recipes.isEmpty()) {
+        throw new AppException(ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+      }
+
+      for (Recipe recipe : recipes) {
+        Double amountPerItem = recipe.getQuantity();
+
+        if (amountPerItem == null
+            || !Double.isFinite(amountPerItem)
+            || amountPerItem <= 0
+            || recipe.getIngredient() == null
+            || recipe.getIngredient().getId() == null) {
+          throw new AppException(
+              ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+        }
+
+        Long ingredientId = recipe.getIngredient().getId();
+        double totalRequired = requirements.getOrDefault(ingredientId, 0.0)
+            + amountPerItem * quantities.get(product.getId());
+
+        if (!Double.isFinite(totalRequired)) {
+          throw new AppException(
+              ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+        }
+
+        requirements.put(ingredientId, totalRequired);
+      }
     }
-  }
-  return requirements;
-}
-
-private Map<Long, Ingredient> lockIngredients(Map<Long, Double> requirements) {
-  Map<Long, Ingredient> ingredients = new TreeMap<>();
-  for (Long ingredientId : new TreeMap<>(requirements).keySet()) {
-    Ingredient ingredient = ingredientRepository.findByIdForUpdate(ingredientId)
-        .orElseThrow(() -> new AppException(ErrorCode.INGREDIENT_NOT_FOUND));
-
-    Double stock = ingredient.getStockQuantity();
-    double required = requirements.get(ingredientId);
-
-    if (stock == null || !Double.isFinite(stock) || stock < required) {
-      throw new AppException(ErrorCode.NOT_ENOUGH_INGREDIENT);
-    }
-
-    ingredients.put(ingredientId, ingredient);
-  }
-  return ingredients;
-}
-
-private void validatePackagedStock(Map<Long, Product> products, Map<Long, Integer> quantities) {
-  for (Product product : products.values()) {
-    if (product.getProductType() != ProductType.PACKAGED) {
-      continue;
-    }
-
-    Integer stock = product.getStockQuantity();
-    int required = quantities.get(product.getId());
-
-    if (stock == null || stock < required) {
-      throw new AppException(ErrorCode.OUT_OF_STOCK);
-    }
-  }
-}
-
-private void reserveStock(Order order, Map<Long, Product> products,
-                          Map<Long, Integer> quantities,
-                          Map<Long, Ingredient> ingredients,
-                          Map<Long, Double> requirements) {
-  List<StockReservation> reservations = new ArrayList<>();
-
-  // Giữ hàng đóng gói
-  for (Product product : products.values()) {
-    if (product.getProductType() != ProductType.PACKAGED) {
-      continue;
-    }
-
-    int quantity = quantities.get(product.getId());
-
-    product.setStockQuantity(product.getStockQuantity() - quantity);
-
-    StockReservation reservation = new StockReservation();
-    reservation.setOrder(order);
-    reservation.setProduct(product);
-    reservation.setQuantity((double) quantity);
-    reservation.setStatus(StockReservationStatus.HELD);
-
-    reservations.add(reservation);
+    return requirements;
   }
 
-  // Giữ nguyên liệu pha chế
-  for (Ingredient ingredient : ingredients.values()) {
-    double required = requirements.get(ingredient.getId());
+  private Map<Long, Ingredient> lockIngredients(Map<Long, Double> requirements) {
+    Map<Long, Ingredient> ingredients = new TreeMap<>();
+    for (Long ingredientId : new TreeMap<>(requirements).keySet()) {
+      Ingredient ingredient = ingredientRepository.findByIdForUpdate(ingredientId)
+          .orElseThrow(() -> new AppException(ErrorCode.INGREDIENT_NOT_FOUND));
 
-    ingredient.setStockQuantity(ingredient.getStockQuantity() - required);
+      Double stock = ingredient.getStockQuantity();
+      double required = requirements.get(ingredientId);
 
-    StockReservation reservation = new StockReservation();
-    reservation.setOrder(order);
-    reservation.setIngredient(ingredient);
-    reservation.setQuantity(required);
-    reservation.setStatus(StockReservationStatus.HELD);
+      if (stock == null || !Double.isFinite(stock) || stock < required) {
+        throw new AppException(ErrorCode.NOT_ENOUGH_INGREDIENT);
+      }
 
-    reservations.add(reservation);
+      ingredients.put(ingredientId, ingredient);
+    }
+    return ingredients;
   }
 
-  stockReservationRepository.saveAll(reservations);
-}
+  private void validatePackagedStock(Map<Long, Product> products, Map<Long, Integer> quantities) {
+    for (Product product : products.values()) {
+      if (product.getProductType() != ProductType.PACKAGED) {
+        continue;
+      }
+
+      Integer stock = product.getStockQuantity();
+      int required = quantities.get(product.getId());
+
+      if (stock == null || stock < required) {
+        throw new AppException(ErrorCode.OUT_OF_STOCK);
+      }
+    }
+  }
+
+  private void reserveStock(Order order, Map<Long, Product> products,
+      Map<Long, Integer> quantities,
+      Map<Long, Ingredient> ingredients,
+      Map<Long, Double> requirements) {
+    List<StockReservation> reservations = new ArrayList<>();
+
+    // Giữ hàng đóng gói
+    for (Product product : products.values()) {
+      if (product.getProductType() != ProductType.PACKAGED) {
+        continue;
+      }
+
+      int quantity = quantities.get(product.getId());
+
+      product.setStockQuantity(product.getStockQuantity() - quantity);
+
+      StockReservation reservation = new StockReservation();
+      reservation.setOrder(order);
+      reservation.setProduct(product);
+      reservation.setQuantity((double) quantity);
+      reservation.setStatus(StockReservationStatus.HELD);
+
+      reservations.add(reservation);
+    }
+
+    // Giữ nguyên liệu pha chế
+    for (Ingredient ingredient : ingredients.values()) {
+      double required = requirements.get(ingredient.getId());
+
+      ingredient.setStockQuantity(ingredient.getStockQuantity() - required);
+
+      StockReservation reservation = new StockReservation();
+      reservation.setOrder(order);
+      reservation.setIngredient(ingredient);
+      reservation.setQuantity(required);
+      reservation.setStatus(StockReservationStatus.HELD);
+
+      reservations.add(reservation);
+    }
+
+    stockReservationRepository.saveAll(reservations);
+  }
+
+  private void releaseStock(Order order) {
+    List<StockReservation> heldReservations = stockReservationRepository.findByOrder_IdOrderByIdAsc(order.getId())
+        .stream().filter(r -> r.getStatus() == StockReservationStatus.HELD)
+        .toList();
+
+    Map<Long, StockReservation> productReservations = new TreeMap<>();
+    Map<Long, StockReservation> ingredientReservations = new TreeMap<>();
+
+    // Kiểm tra và chia bản ghi theo loại hàng cần hoàn
+    for (StockReservation reservation : heldReservations) {
+      Double quantity = reservation.getQuantity();
+
+      if (quantity == null || !Double.isFinite(quantity) || quantity <= 0
+          || (reservation.getProduct() == null) == (reservation.getIngredient() == null)) {
+        throw new AppException(ErrorCode.INVENTORY_DATA_INVALID);
+      }
+
+      if (reservation.getProduct() != null) {
+        if (quantity != Math.rint(quantity) || quantity > Integer.MAX_VALUE) {
+          throw new AppException(ErrorCode.INVENTORY_DATA_INVALID);
+        }
+
+        Long productId = reservation.getProduct().getId();
+
+        if (productReservations.putIfAbsent(productId, reservation) != null) {
+          throw new AppException(ErrorCode.INVENTORY_DATA_INVALID);
+        }
+      } else {
+        Long ingredientId = reservation.getIngredient().getId();
+
+        if (ingredientReservations.putIfAbsent(ingredientId, reservation) != null) {
+          throw new AppException(ErrorCode.INVENTORY_DATA_INVALID);
+        }
+      }
+    }
+
+    // Khóa và hoàn sản phẩm theo ID tăng dần
+    for (Long productId : productReservations.keySet()) {
+      Product product = productRepository.findByIdForUpdate(productId)
+          .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+      Integer stock = product.getStockQuantity();
+      StockReservation reservation = productReservations.get(productId);
+
+      if (stock == null || stock < 0) {
+        throw new AppException(ErrorCode.INVENTORY_DATA_INVALID);
+      }
+
+      long restoredStock = (long) stock + reservation.getQuantity().longValue();
+
+      if (restoredStock > Integer.MAX_VALUE) {
+        throw new AppException(ErrorCode.INVENTORY_DATA_INVALID);
+      }
+
+      product.setStockQuantity((int) restoredStock);
+    }
+
+    // Sau đó khóa và hoàn nguyên liệu theo ID tăng dần
+    for (Long ingredientId : ingredientReservations.keySet()) {
+      Ingredient ingredient = ingredientRepository.findByIdForUpdate(ingredientId)
+          .orElseThrow(() -> new AppException(ErrorCode.INGREDIENT_NOT_FOUND));
+
+      Double stock = ingredient.getStockQuantity();
+      StockReservation reservation = ingredientReservations.get(ingredientId);
+
+      if (stock == null || !Double.isFinite(stock) || stock < 0) {
+        throw new AppException(ErrorCode.INVENTORY_DATA_INVALID);
+      }
+
+      double restoredStock = stock + reservation.getQuantity();
+
+      if (!Double.isFinite(restoredStock)) {
+        throw new AppException(ErrorCode.INVENTORY_DATA_INVALID);
+      }
+
+      ingredient.setStockQuantity(restoredStock);
+    }
+
+    for (StockReservation reservation : heldReservations) {
+      reservation.setStatus(StockReservationStatus.RELEASED);
+    }
+  }
 }

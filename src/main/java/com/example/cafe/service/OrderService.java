@@ -8,4 +8,5 @@ public interface OrderService {
   OrderResponse createOrder(OrderRequest request);
   OrderResponse getOrderById(Long id);
   OrderResponse createGuestOrder(String token, GuestOrderRequest request);
+  boolean expireUnpaidOrder(Long orderId);
 }

@@ -30,6 +30,7 @@ public enum ErrorCode {
   OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "Sản phẩm đã hết hàng hoặc không đủ số lượng"),
   NOT_ENOUGH_INGREDIENT(HttpStatus.BAD_REQUEST, "Không đủ nguyên liệu để pha chế"),
   INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy nguyên liệu"),
+  INVENTORY_DATA_INVALID(HttpStatus.CONFLICT, "Dữ liệu tồn kho hoặc giữ hàng không hợp lệ"),
 
   // Bàn
   TABLE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy bàn"),
