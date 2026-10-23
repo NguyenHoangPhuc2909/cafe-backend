@@ -19,19 +19,19 @@ public class ProductController {
 
   // 1. Lấy danh sách tất cả sản phẩm
   @GetMapping
-  public ApiResponse<List<ProductResponse>> getAllProducts(){
-    return ApiResponse.ok(productService.getAllProducts());
+  public ApiResponse<List<ProductResponse>> getPublicMenu() {
+    return ApiResponse.ok(productService.getPublicMenu());
   }
 
   // 2. Xem chi tiết 1 sản phẩm
   @GetMapping("/{id}")
-  public ApiResponse<ProductResponse> getProductById(@PathVariable Long id){
+  public ApiResponse<ProductResponse> getProductById(@PathVariable Long id) {
     return ApiResponse.ok(productService.getProductById(id));
   }
 
   // 3. Thêm sản phẩm mới (Dùng @Valid chặn dữ liệu bẩn)
   @PostMapping
-  public ApiResponse<ProductResponse> createProduct(@RequestBody @Valid ProductRequest request){
+  public ApiResponse<ProductResponse> createProduct(@RequestBody @Valid ProductRequest request) {
     return ApiResponse.ok(productService.createProduct(request));
   }
 

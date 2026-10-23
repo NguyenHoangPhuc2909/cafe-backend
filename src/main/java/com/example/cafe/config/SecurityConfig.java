@@ -46,7 +46,9 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/public/tables/*/access").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/guest/session").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/guest/orders").permitAll()
-            .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "ADMIN").anyRequest().authenticated())
+            .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "ADMIN")
+            .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+            .anyRequest().authenticated())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

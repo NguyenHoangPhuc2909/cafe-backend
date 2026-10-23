@@ -13,6 +13,7 @@ import com.example.cafe.service.ProductService;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ public class ProductServiceImpl implements ProductService {
   private final CategoryRepository categoryRepository;
 
   @Override
+  @Transactional(readOnly = true)
   public List<ProductResponse> getAllProducts() {
     return productRepository.findAll().stream()
         .map(ProductMapper::toResponse).collect(Collectors.toList());
@@ -71,5 +73,24 @@ public class ProductServiceImpl implements ProductService {
         .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
     product.setIsActive(false);
     productRepository.save(product);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ProductResponse> getPublicMenu() {
+    return productRepository.findByIsActiveTrueOrderByIdAsc()
+        .stream().map(ProductMapper::toResponse)
+        .toList();
+  }
+
+  @Override
+  @Transactional
+  public ProductResponse updateProductActive(Long id, boolean active) {
+    Product product = productRepository.findByIdForUpdate(id)
+        .orElseThrow(() ->
+            new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+    product.setIsActive(active);
+    return ProductMapper.toResponse(product);
   }
 }
