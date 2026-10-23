@@ -1,9 +1,11 @@
 package com.example.cafe.dto.response;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.cafe.entity.OrderPaymentStatus;
 import lombok.*;
 
 @Data
@@ -12,11 +14,15 @@ import lombok.*;
 @NoArgsConstructor
 public class OrderResponse {
   private Long id;
-  private Long userId;
+  private Long sessionId;
+  private Long tableId;
+  private String tableName;
   private BigDecimal totalAmount;
   private String status;
   private LocalDateTime createdAt;
   private List<OrderItemResponse> items;
+  private OrderPaymentStatus paymentStatus;
+  private Instant paymentExpiresAt;
 
   @Data
   @Builder

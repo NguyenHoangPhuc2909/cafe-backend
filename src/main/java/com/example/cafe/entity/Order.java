@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Data
@@ -16,8 +17,12 @@ public class Order {
 
   // Quan hệ Many-to-One: Nhiều đơn hàng do 1 user đặt
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id", nullable = false)
+  @JoinColumn(name = "user_id")
   private User user;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "table_session_id")
+  private TableSession tableSession;
 
   @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
   private BigDecimal totalAmount;
@@ -31,4 +36,11 @@ public class Order {
 
   @Column(name = "note", columnDefinition = "TEXT")
   private String note;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "payment_status", nullable = false, length = 20)
+  private OrderPaymentStatus paymentStatus = OrderPaymentStatus.UNPAID;
+
+  @Column(name = "payment_expires_at")
+  private Instant paymentExpiresAt;
 }
