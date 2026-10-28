@@ -35,3 +35,6 @@ build/
 *.env
 *.md
 *.txt
+
+# Documentation and its archive stay local
+/docs/archive/
