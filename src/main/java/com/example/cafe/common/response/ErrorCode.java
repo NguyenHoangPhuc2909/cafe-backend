@@ -37,6 +37,13 @@ public enum ErrorCode {
   TABLE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Tên bàn hoặc mã QR đã tồn tại"),
   TABLE_INACTIVE(HttpStatus.CONFLICT, "Bàn đang ngừng sử dụng"),
 
+  // Thanh toán
+  PAYMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "Bạn không có quyền xác nhận thanh toán"),
+  ORDER_NOT_PAYABLE(HttpStatus.CONFLICT, "Đơn hàng không đủ điều kiện thanh toán"),
+  PAYMENT_EXPIRED(HttpStatus.CONFLICT, "Đơn hàng đã quá hạn thanh toán"),
+  PAYMENT_CONFLICT(HttpStatus.CONFLICT, "Đơn đã có thông tin thanh toán khác"),
+  PAYMENT_DATA_INVALID(HttpStatus.CONFLICT, "Dữ liệu thanh toán hoặc giữ hàng không hợp lệ"),
+
   // Phiên phục vụ và token khách
   TABLE_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Bàn chưa có phiên phục vụ đang mở"),
   TABLE_SESSION_ALREADY_OPEN(HttpStatus.CONFLICT, "Bàn đã có phiên phục vụ đang mở"),
