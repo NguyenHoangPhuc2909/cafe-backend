@@ -1,7 +1,8 @@
 package com.example.cafe.security;
 
-import com.example.cafe.entity.User;
-import com.example.cafe.repository.UserRepository;
+import com.example.cafe.common.entity.auth.User;
+import com.example.cafe.feature.auth.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -22,6 +23,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng: " + username));
 
     return org.springframework.security.core.userdetails.User.withUsername(user.getUsername()).password(user.getPassword())
-        .authorities(new ArrayList<>()).build();
+        .roles(user.getRole()).build();
   }
 }
