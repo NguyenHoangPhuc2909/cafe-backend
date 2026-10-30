@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -23,17 +24,34 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   Optional<Order> findByIdForUpdate(@Param("id") Long id);
 
   @Query("""
-    SELECT o.id
-    FROM Order o
-    WHERE o.tableSession IS NOT NULL
-      AND o.status = 'PENDING'
-      AND o.paymentStatus = :paymentStatus
-      AND o.paymentExpiresAt <= :now
-    ORDER BY o.id ASC
-    """)
+      SELECT o.id
+      FROM Order o
+      WHERE o.tableSession IS NOT NULL
+        AND o.status = 'PENDING'
+        AND o.paymentStatus = :paymentStatus
+        AND o.paymentExpiresAt <= :now
+      ORDER BY o.id ASC
+      """)
   List<Long> findExpiredOrderIds(
       @Param("now") Instant now,
       @Param("paymentStatus") OrderPaymentStatus paymentStatus,
+      Pageable pageable
+  );
+
+  // Khách xem một đơn thuộc phiên bàn của mình
+  Optional<Order> findByIdAndTableSession_Id(Long orderId, Long sessionId);
+
+  // Danh sách đơn
+  @Query("""
+          SELECT o FROM Order o
+          WHERE (:status IS NULL OR o.status = :status)
+            AND (:paymentStatus IS NULL OR o.paymentStatus = :paymentStatus)
+            AND (:sessionId IS NULL OR o.tableSession.id = :sessionId)
+      """)
+  Page<Order> findForStaff(
+      @Param("status") String status,
+      @Param("paymentStatus") OrderPaymentStatus paymentStatus,
+      @Param("sessionId") Long sessionId,
       Pageable pageable
   );
 }

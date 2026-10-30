@@ -15,6 +15,7 @@ import com.example.cafe.common.enums.StockReservationStatus;
 import com.example.cafe.common.enums.TableSessionStatus;
 import com.example.cafe.common.exception.AppException;
 import com.example.cafe.common.response.ErrorCode;
+import com.example.cafe.common.response.PageResponse;
 import com.example.cafe.feature.auth.repository.UserRepository;
 import com.example.cafe.feature.catalog.repository.ProductRepository;
 import com.example.cafe.feature.catalog.repository.RecipeRepository;
@@ -28,21 +29,21 @@ import com.example.cafe.feature.order.repository.OrderItemRepository;
 import com.example.cafe.feature.order.repository.OrderRepository;
 import com.example.cafe.feature.order.service.OrderService;
 import com.example.cafe.feature.table.repository.TableSessionRepository;
+import com.example.cafe.feature.table.service.TableSessionService;
 import com.example.cafe.security.TableSessionTokenProvider;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +56,8 @@ public class OrderServiceImpl implements OrderService {
   private final TableSessionRepository tableSessionRepository;
   private final TableSessionTokenProvider tableSessionTokenProvider;
   private final StockReservationRepository stockReservationRepository;
+
+  private final TableSessionService tableSessionService;
 
   private final RecipeRepository recipeRepository;
   private final IngredientRepository ingredientRepository;
@@ -257,6 +260,54 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public PageResponse<OrderResponse> getStaffOrders(String status, OrderPaymentStatus paymentStatus, Long sessionId, int page, int size) {
+    if (page < 0 || size < 1 || size > 100 || (sessionId != null && sessionId <= 0)) {
+      throw new AppException(ErrorCode.INVALID_ORDER_QUERY);
+    }
+
+    String normalizedStatus = null;
+    if (status != null && !status.isBlank()) {
+      normalizedStatus = status.trim().toUpperCase(Locale.ROOT);
+
+      if (!"PENDING".equals(normalizedStatus) && !"EXPIRED".equals(normalizedStatus)) {
+        throw new AppException(ErrorCode.INVALID_ORDER_QUERY);
+      }
+    }
+
+    var pageable = PageRequest.of(page, size,
+        Sort.by(
+            Sort.Order.desc("createdAt"),
+            Sort.Order.desc("id")
+        ));
+
+    var orders = orderRepository.findForStaff(normalizedStatus, paymentStatus, sessionId, pageable);
+
+    var responses = orders.map(order ->
+        OrderMapper.toResponse(order,
+            orderItemRepository.findByOrderId(order.getId())));
+
+    return PageResponse.from(responses);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public OrderResponse getGuestOrder(String token, Long orderId) {
+    var session = tableSessionService.getGuestSession(token);
+
+    if(orderId == null || orderId <= 0) {
+      throw new AppException(ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    Order order = orderRepository.findByIdAndTableSession_Id(orderId, session.getId())
+        .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+    List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+
+    return OrderMapper.toResponse(order, items);
+  }
+
+  @Override
   public OrderResponse getOrderById(Long id) {
     Order order = orderRepository.findById(id)
         .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
@@ -377,9 +428,9 @@ public class OrderServiceImpl implements OrderService {
   }
 
   private void reserveStock(Order order, Map<Long, Product> products,
-      Map<Long, Integer> quantities,
-      Map<Long, Ingredient> ingredients,
-      Map<Long, Double> requirements) {
+                            Map<Long, Integer> quantities,
+                            Map<Long, Ingredient> ingredients,
+                            Map<Long, Double> requirements) {
     List<StockReservation> reservations = new ArrayList<>();
 
     // Giữ hàng đóng gói

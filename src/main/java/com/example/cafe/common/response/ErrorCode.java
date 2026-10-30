@@ -25,6 +25,7 @@ public enum ErrorCode {
   ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng"),
   INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "Tổng số lượng món không hợp lệ"),
   INVALID_ORDER_TOTAL(HttpStatus.BAD_REQUEST, "Tổng tiền đơn hàng vượt giới hạn cho phép"),
+  INVALID_ORDER_QUERY(HttpStatus.BAD_REQUEST, "Bộ lọc hoặc thông tin phân trang đơn hàng không hợp lệ"),
 
   // Tồn kho
   OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "Sản phẩm đã hết hàng hoặc không đủ số lượng"),
