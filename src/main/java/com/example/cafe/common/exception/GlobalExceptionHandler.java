@@ -4,9 +4,11 @@ import com.example.cafe.common.response.ApiResponse;
 import com.example.cafe.common.response.ErrorCode;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -53,5 +55,22 @@ public class GlobalExceptionHandler {
         .build();
 
     return ResponseEntity.badRequest().body(apiResponse);
+  }
+
+  // 4. Xử lý lỗi enum/JSON sai
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleUnreadableBody(HttpMessageNotReadableException e) {
+    return ResponseEntity.badRequest().body(ApiResponse.<Void>error(
+        "JSON không hợp lệ hoặc giá trị trường không được hỗ trợ"
+    ));
+  }
+
+  // 5. Xử lý lỗi tham số sai kiểu
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ApiResponse<Void>> handleTypeMisMatch(MethodArgumentTypeMismatchException e) {
+    return ResponseEntity.badRequest()
+        .body(ApiResponse.<Void>error(
+            "Tham số URL không hợp lệ"
+        ));
   }
 }

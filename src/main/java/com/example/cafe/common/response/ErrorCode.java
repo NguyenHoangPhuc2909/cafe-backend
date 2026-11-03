@@ -25,6 +25,8 @@ public enum ErrorCode {
   ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng"),
   INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "Tổng số lượng món không hợp lệ"),
   INVALID_ORDER_TOTAL(HttpStatus.BAD_REQUEST, "Tổng tiền đơn hàng vượt giới hạn cho phép"),
+  INVALID_ORDER_QUERY(HttpStatus.BAD_REQUEST, "Bộ lọc hoặc thông tin phân trang đơn hàng không hợp lệ"),
+  ORDER_NOT_COMPLETABLE(HttpStatus.CONFLICT, "Chỉ được hoàn thành đơn đã thanh toán và đang chế biến"),
 
   // Tồn kho
   OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "Sản phẩm đã hết hàng hoặc không đủ số lượng"),
@@ -36,6 +38,13 @@ public enum ErrorCode {
   TABLE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy bàn"),
   TABLE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Tên bàn hoặc mã QR đã tồn tại"),
   TABLE_INACTIVE(HttpStatus.CONFLICT, "Bàn đang ngừng sử dụng"),
+
+  // Thanh toán
+  PAYMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "Bạn không có quyền xác nhận thanh toán"),
+  ORDER_NOT_PAYABLE(HttpStatus.CONFLICT, "Đơn hàng không đủ điều kiện thanh toán"),
+  PAYMENT_EXPIRED(HttpStatus.CONFLICT, "Đơn hàng đã quá hạn thanh toán"),
+  PAYMENT_CONFLICT(HttpStatus.CONFLICT, "Đơn đã có thông tin thanh toán khác"),
+  PAYMENT_DATA_INVALID(HttpStatus.CONFLICT, "Dữ liệu thanh toán hoặc giữ hàng không hợp lệ"),
 
   // Phiên phục vụ và token khách
   TABLE_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Bàn chưa có phiên phục vụ đang mở"),

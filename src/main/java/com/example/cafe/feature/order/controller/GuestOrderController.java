@@ -26,4 +26,17 @@ public class GuestOrderController {
         .cacheControl(CacheControl.noStore())
         .body(ApiResponse.ok(response));
   }
+
+  @GetMapping("/{orderId}")
+  public ResponseEntity<ApiResponse<OrderResponse>> getOrder(
+      @RequestHeader(
+          value = "X-Table-Session-Token",
+          required = false
+      ) String token, @PathVariable("orderId") Long orderId) {
+    OrderResponse response = orderService.getGuestOrder(token, orderId);
+
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.noStore())
+        .body(ApiResponse.ok(response));
+  }
 }

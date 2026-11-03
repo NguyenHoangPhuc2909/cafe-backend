@@ -8,6 +8,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -37,7 +38,7 @@ public class OrderItem {
   // Quan hệ Many-to-Many: Một món trong đơn có thể gọi nhiều topping, 1 topping thuộc nhiều món
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(name = "order_item_toppings",
-  joinColumns = @JoinColumn(name = "order_item_id"),
-  inverseJoinColumns = @JoinColumn(name = "topping_id"))
-  private ArrayList<Topping> toppings;
+      joinColumns = @JoinColumn(name = "order_item_id"),
+      inverseJoinColumns = @JoinColumn(name = "topping_id"))
+  private List<Topping> toppings = new ArrayList<>();
 }
