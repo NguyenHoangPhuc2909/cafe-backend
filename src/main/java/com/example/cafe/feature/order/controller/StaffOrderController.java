@@ -48,4 +48,13 @@ public class StaffOrderController {
         .cacheControl(CacheControl.noStore())
         .body(ApiResponse.ok(response));
   }
+
+  @PatchMapping("/{orderId}/complete")
+  public ResponseEntity<ApiResponse<OrderResponse>> completeOrder(@PathVariable("orderId") Long orderId) {
+    OrderResponse response = orderService.completeOrder(orderId);
+
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.noStore())
+        .body(ApiResponse.ok(response));
+  }
 }

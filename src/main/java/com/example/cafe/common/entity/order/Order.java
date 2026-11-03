@@ -4,6 +4,7 @@ import com.example.cafe.common.entity.auth.User;
 import com.example.cafe.common.entity.table.TableSession;
 import com.example.cafe.common.enums.OrderPaymentStatus;
 
+import com.example.cafe.common.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -32,8 +33,9 @@ public class Order {
   private BigDecimal totalAmount;
 
   // Trạng thái đơn hàng: PENDING, COMPLETED, CANCELLED...
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 50)
-  private String status = "PENDING";
+  private OrderStatus status = OrderStatus.PENDING;
 
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();

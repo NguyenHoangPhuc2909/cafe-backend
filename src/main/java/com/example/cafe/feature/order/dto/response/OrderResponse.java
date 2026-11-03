@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.cafe.common.enums.OrderStatus;
 import lombok.*;
 
 @Data
@@ -19,7 +20,7 @@ public class OrderResponse {
   private Long tableId;
   private String tableName;
   private BigDecimal totalAmount;
-  private String status;
+  private OrderStatus status;
   private LocalDateTime createdAt;
   private List<OrderItemResponse> items;
   private OrderPaymentStatus paymentStatus;

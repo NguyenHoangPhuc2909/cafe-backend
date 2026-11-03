@@ -9,10 +9,7 @@ import com.example.cafe.common.entity.order.Order;
 import com.example.cafe.common.entity.order.OrderItem;
 import com.example.cafe.common.entity.table.CafeTable;
 import com.example.cafe.common.entity.table.TableSession;
-import com.example.cafe.common.enums.OrderPaymentStatus;
-import com.example.cafe.common.enums.ProductType;
-import com.example.cafe.common.enums.StockReservationStatus;
-import com.example.cafe.common.enums.TableSessionStatus;
+import com.example.cafe.common.enums.*;
 import com.example.cafe.common.exception.AppException;
 import com.example.cafe.common.response.ErrorCode;
 import com.example.cafe.common.response.PageResponse;
@@ -115,7 +112,7 @@ public class OrderServiceImpl implements OrderService {
 
     Order order = new Order();
     order.setUser(user);
-    order.setStatus("PENDING");
+    order.setStatus(OrderStatus.PENDING);
 
     order.setTotalAmount(BigDecimal.ZERO);
     order = orderRepository.save(order);
@@ -210,7 +207,7 @@ public class OrderServiceImpl implements OrderService {
     // 5. Lưu đơn chưa thanh toán
     Order order = new Order();
     order.setTableSession(session);
-    order.setStatus("PENDING");
+    order.setStatus(OrderStatus.PENDING);
     order.setPaymentStatus(OrderPaymentStatus.UNPAID);
     order.setTotalAmount(totalAmount);
     order.setNote(request.getNote());
@@ -244,7 +241,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     // Chỉ xử lý đơn bàn đang chờ thanh toán
-    if (order.getTableSession() == null || !"PENDING".equals(order.getStatus())
+    if (order.getTableSession() == null || (order.getStatus() != OrderStatus.PENDING)
         || order.getPaymentStatus() != OrderPaymentStatus.UNPAID || order.getPaymentExpiresAt() == null) {
       return false;
     }
@@ -255,7 +252,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     releaseStock(order);
-    order.setStatus("EXPIRED");
+    order.setStatus(OrderStatus.EXPIRED);
     return true;
   }
 
@@ -266,11 +263,14 @@ public class OrderServiceImpl implements OrderService {
       throw new AppException(ErrorCode.INVALID_ORDER_QUERY);
     }
 
-    String normalizedStatus = null;
-    if (status != null && !status.isBlank()) {
-      normalizedStatus = status.trim().toUpperCase(Locale.ROOT);
+    OrderStatus normalizedStatus = null;
 
-      if (!"PENDING".equals(normalizedStatus) && !"EXPIRED".equals(normalizedStatus)) {
+    if (status != null && !status.isBlank()) {
+      try {
+        normalizedStatus = OrderStatus.valueOf(
+            status.trim().toUpperCase(Locale.ROOT)
+        );
+      } catch (IllegalArgumentException exception) {
         throw new AppException(ErrorCode.INVALID_ORDER_QUERY);
       }
     }
@@ -295,7 +295,7 @@ public class OrderServiceImpl implements OrderService {
   public OrderResponse getGuestOrder(String token, Long orderId) {
     var session = tableSessionService.getGuestSession(token);
 
-    if(orderId == null || orderId <= 0) {
+    if (orderId == null || orderId <= 0) {
       throw new AppException(ErrorCode.ORDER_NOT_FOUND);
     }
 
@@ -305,6 +305,32 @@ public class OrderServiceImpl implements OrderService {
     List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
 
     return OrderMapper.toResponse(order, items);
+  }
+
+  @Override
+  @Transactional
+  public OrderResponse completeOrder(Long orderId) {
+    if (orderId == null || orderId <= 0) {
+      throw new AppException(ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    Order order = orderRepository.findByIdForUpdate(orderId)
+        .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+    if (order.getPaymentStatus() != OrderPaymentStatus.PAID) {
+      throw new AppException(ErrorCode.ORDER_NOT_COMPLETABLE);
+    }
+
+    if (order.getStatus() == OrderStatus.COMPLETED) {
+      return OrderMapper.toResponse(order, orderItemRepository.findByOrderId(orderId));
+    }
+
+    if (order.getStatus() != OrderStatus.PREPARING) {
+      throw new AppException(ErrorCode.ORDER_NOT_COMPLETABLE);
+    }
+
+    order.setStatus(OrderStatus.COMPLETED);
+    return OrderMapper.toResponse(order, orderItemRepository.findByOrderId(orderId));
   }
 
   @Override

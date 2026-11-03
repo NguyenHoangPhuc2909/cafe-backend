@@ -21,4 +21,6 @@ public interface OrderService {
       int size);
 
   OrderResponse getGuestOrder(String token, Long orderId);
+
+  OrderResponse completeOrder(Long orderId);
 }

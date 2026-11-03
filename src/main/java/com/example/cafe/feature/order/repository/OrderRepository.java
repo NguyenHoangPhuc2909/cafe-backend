@@ -3,6 +3,7 @@ package com.example.cafe.feature.order.repository;
 import com.example.cafe.common.entity.order.Order;
 import com.example.cafe.common.enums.OrderPaymentStatus;
 
+import com.example.cafe.common.enums.OrderStatus;
 import jakarta.persistence.LockModeType;
 
 import java.time.Instant;
@@ -27,7 +28,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
       SELECT o.id
       FROM Order o
       WHERE o.tableSession IS NOT NULL
-        AND o.status = 'PENDING'
+        AND o.status = com.example.cafe.common.enums.OrderStatus.PENDING
         AND o.paymentStatus = :paymentStatus
         AND o.paymentExpiresAt <= :now
       ORDER BY o.id ASC
@@ -49,7 +50,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             AND (:sessionId IS NULL OR o.tableSession.id = :sessionId)
       """)
   Page<Order> findForStaff(
-      @Param("status") String status,
+      @Param("status") OrderStatus status,
       @Param("paymentStatus") OrderPaymentStatus paymentStatus,
       @Param("sessionId") Long sessionId,
       Pageable pageable

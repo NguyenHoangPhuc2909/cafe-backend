@@ -4,6 +4,7 @@ import com.example.cafe.common.entity.auth.User;
 import com.example.cafe.common.entity.order.Order;
 import com.example.cafe.common.entity.payment.Payment;
 import com.example.cafe.common.enums.OrderPaymentStatus;
+import com.example.cafe.common.enums.OrderStatus;
 import com.example.cafe.common.enums.PaymentMethod;
 import com.example.cafe.common.enums.StockReservationStatus;
 import com.example.cafe.common.exception.AppException;
@@ -43,7 +44,7 @@ public class PaymentServiceImpl implements PaymentService {
     User staff = userRepository.findByUsername(username)
         .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-    if (!"STAFF".equals(staff.getRole()) && !"ADMIN".equals(staff.getRole())) {
+    if (!"STAFF".equals(staff.getRole())) {
       throw new AppException(ErrorCode.PAYMENT_FORBIDDEN);
     }
 
@@ -67,12 +68,12 @@ public class PaymentServiceImpl implements PaymentService {
       return toResponse(payment);
     }
 
-    if ("EXPIRED".equals(order.getStatus())) {
+    if (order.getStatus() == OrderStatus.EXPIRED) {
       throw new AppException(ErrorCode.PAYMENT_EXPIRED);
     }
 
     // Chỉ nhận đơn đang chờ trả và còn hạn thanh toán
-    if (!"PENDING".equals(order.getStatus()) || order.getPaymentStatus() != OrderPaymentStatus.UNPAID
+    if (order.getStatus() != OrderStatus.PENDING || order.getPaymentStatus() != OrderPaymentStatus.UNPAID
         || order.getPaymentExpiresAt() == null) {
       throw new AppException(ErrorCode.ORDER_NOT_PAYABLE);
     }
@@ -103,6 +104,7 @@ public class PaymentServiceImpl implements PaymentService {
     payment.setConfirmedBy(staff);
 
     order.setPaymentStatus(OrderPaymentStatus.PAID);
+    order.setStatus(OrderStatus.PREPARING);
 
     for (var reservation : reservations) {
       reservation.setStatus(StockReservationStatus.CONSUMED);
