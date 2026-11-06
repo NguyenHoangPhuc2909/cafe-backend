@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.cafe.common.enums.OrderStatus;
+import com.example.cafe.common.enums.DrinkSize;
+import com.example.cafe.common.enums.DrinkOptionLevel;
 import lombok.*;
 
 @Data
@@ -35,6 +37,8 @@ public class OrderResponse {
     private String productName;
     private Integer quantity;
     private BigDecimal price;
-    private List<String> toppingNames;
+    private DrinkSize size;
+    private DrinkOptionLevel iceLevel;
+    private DrinkOptionLevel sweetnessLevel;
   }
 }

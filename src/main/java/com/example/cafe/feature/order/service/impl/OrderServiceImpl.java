@@ -25,6 +25,7 @@ import com.example.cafe.feature.order.mapper.OrderMapper;
 import com.example.cafe.feature.order.repository.OrderItemRepository;
 import com.example.cafe.feature.order.repository.OrderRepository;
 import com.example.cafe.feature.order.service.OrderService;
+import com.example.cafe.feature.order.service.GuestOrderLines;
 import com.example.cafe.feature.table.repository.TableSessionRepository;
 import com.example.cafe.feature.table.service.TableSessionService;
 import com.example.cafe.security.TableSessionTokenProvider;
@@ -168,6 +169,7 @@ public class OrderServiceImpl implements OrderService {
     // 2. Gộp số lượng và khoá sản phẩm
     Map<Long, Integer> quantities = collectQuantities(request);
     Map<Long, Product> products = lockProducts(quantities);
+    var lines = GuestOrderLines.collect(request, products);
 
     // 3. Tính nhu cầu, khóa nguyên liệu và kiểm tra đủ kho
     Map<Long, Double> requirements = collectIngredientRequirements(products, quantities);
@@ -179,14 +181,10 @@ public class OrderServiceImpl implements OrderService {
     BigDecimal totalAmount = BigDecimal.ZERO;
     List<OrderItem> items = new ArrayList<>();
 
-    for (Product product : products.values()) {
-      int quantity = quantities.get(product.getId());
-      BigDecimal price = product.getPrice();
-
-      if (price == null || price.signum() < 0) {
-        throw new AppException(
-            ErrorCode.PRODUCT_CONFIGURATION_INVALID);
-      }
+    for (var line : lines) {
+      Product product = line.product();
+      int quantity = line.quantity();
+      BigDecimal price = line.price();
 
       totalAmount = totalAmount.add(price.multiply(BigDecimal.valueOf(quantity)));
 
@@ -194,6 +192,9 @@ public class OrderServiceImpl implements OrderService {
       item.setProduct(product);
       item.setQuantity(quantity);
       item.setPrice(price);
+      item.setSize(line.size());
+      item.setIceLevel(line.iceLevel());
+      item.setSweetnessLevel(line.sweetnessLevel());
 
       items.add(item);
 

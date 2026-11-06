@@ -17,6 +17,7 @@ public class ProductRequest {
   private BigDecimal price;
   private String description;
   private String imageUrl;
+  private Boolean sizeEnabled;
 
   @NotNull(message = "Sản phẩm phải thuộc về một danh mục (categoryId)")
   private Long categoryId;

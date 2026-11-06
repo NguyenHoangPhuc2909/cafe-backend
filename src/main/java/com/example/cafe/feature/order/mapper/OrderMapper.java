@@ -1,6 +1,5 @@
 package com.example.cafe.feature.order.mapper;
 
-import com.example.cafe.common.entity.catalog.Topping;
 import com.example.cafe.common.entity.order.Order;
 import com.example.cafe.common.entity.order.OrderItem;
 import com.example.cafe.common.entity.table.CafeTable;
@@ -21,8 +20,9 @@ public class OrderMapper {
             .productName(item.getProduct().getName())
             .quantity(item.getQuantity())
             .price(item.getPrice())
-            .toppingNames(item.getToppings() != null
-                ? item.getToppings().stream().map(Topping::getName).collect(Collectors.toList()) : null)
+            .size(item.getSize())
+            .iceLevel(item.getIceLevel())
+            .sweetnessLevel(item.getSweetnessLevel())
             .build()).collect(Collectors.toList());
 
     TableSession session = order.getTableSession();

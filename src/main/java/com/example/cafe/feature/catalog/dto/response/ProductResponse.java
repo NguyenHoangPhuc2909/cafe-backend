@@ -2,6 +2,8 @@ package com.example.cafe.feature.catalog.dto.response;
 
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.List;
+import com.example.cafe.common.enums.DrinkSize;
 
 @Data
 @Builder
@@ -15,6 +17,10 @@ public class ProductResponse {
   private String imageUrl;
 
   private Boolean isActive;
+  private Boolean sizeEnabled;
+  private List<SizeOption> sizes;
+
+  public record SizeOption(DrinkSize size, BigDecimal price) {}
 
   private Long categoryId;
   private String categoryName;

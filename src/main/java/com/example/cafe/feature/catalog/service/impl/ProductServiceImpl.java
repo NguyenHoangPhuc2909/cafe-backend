@@ -63,6 +63,7 @@ public class ProductServiceImpl implements ProductService {
     product.setPrice(request.getPrice());
     product.setImageUrl(request.getImageUrl());
     product.setCategory(category);
+    if (request.getSizeEnabled() != null) product.setSizeEnabled(request.getSizeEnabled());
 
     product = productRepository.save(product);
     return ProductMapper.toResponse(product);

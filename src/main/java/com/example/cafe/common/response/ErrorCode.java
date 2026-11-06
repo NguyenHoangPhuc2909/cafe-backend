@@ -24,6 +24,8 @@ public enum ErrorCode {
   // Đơn hàng
   ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng"),
   INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "Tổng số lượng món không hợp lệ"),
+  INVALID_PRODUCT_SIZE(HttpStatus.BAD_REQUEST, "Món không hỗ trợ size đã chọn. Vui lòng kiểm tra lại thực đơn"),
+  INVALID_DRINK_CUSTOMIZATION(HttpStatus.BAD_REQUEST, "Món không hỗ trợ tùy chọn đá hoặc độ ngọt"),
   INVALID_ORDER_TOTAL(HttpStatus.BAD_REQUEST, "Tổng tiền đơn hàng vượt giới hạn cho phép"),
   INVALID_ORDER_QUERY(HttpStatus.BAD_REQUEST, "Bộ lọc hoặc thông tin phân trang đơn hàng không hợp lệ"),
   ORDER_NOT_COMPLETABLE(HttpStatus.CONFLICT, "Chỉ được hoàn thành đơn đã thanh toán và đang chế biến"),

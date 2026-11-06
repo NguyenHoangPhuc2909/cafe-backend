@@ -1,6 +1,5 @@
 package com.example.cafe.feature.catalog.controller;
 
-import com.example.cafe.common.entity.catalog.Product;
 import com.example.cafe.common.response.ApiResponse;
 import com.example.cafe.feature.catalog.dto.request.ProductRequest;
 import com.example.cafe.feature.catalog.dto.response.ProductResponse;

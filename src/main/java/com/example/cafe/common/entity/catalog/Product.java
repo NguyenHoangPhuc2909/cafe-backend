@@ -30,6 +30,9 @@ public class Product {
   @Column(name = "is_active")
   private Boolean isActive = true;
 
+  @Column(name = "size_enabled")
+  private Boolean sizeEnabled = false;
+
   // Quan hệ Many-to-One: Nhiều sản phẩm trong cùng 1 loại
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "category_id", nullable = false)
