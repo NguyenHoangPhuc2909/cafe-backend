@@ -1,6 +1,7 @@
 package com.example.cafe.feature.catalog.repository;
 
 import com.example.cafe.common.entity.catalog.Product;
+import com.example.cafe.common.enums.ProductType;
 
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,4 +20,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
   Optional<Product> findByIdForUpdate(@Param("id") Long id);
 
   List<Product> findByIsActiveTrueOrderByIdAsc();
+
+  List<Product> findByProductTypeOrderByIdAsc(ProductType productType);
 }
