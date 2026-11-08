@@ -8,10 +8,13 @@ public record StockMovementResponse(
     StockMovementType type,
     Long ingredientId,
     Long productId,
+    String itemName,
+    String unit,
     Double quantityDelta,
     Double availableBefore,
     Double availableAfter,
     Long performedById,
+    String performedByName,
     String note,
     Instant createdAt
 ) {}

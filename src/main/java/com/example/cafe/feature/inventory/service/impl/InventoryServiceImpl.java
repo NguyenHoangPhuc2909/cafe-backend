@@ -4,11 +4,14 @@ import com.example.cafe.common.entity.inventory.StockMovement;
 import com.example.cafe.common.enums.StockMovementType;
 import com.example.cafe.common.exception.AppException;
 import com.example.cafe.common.response.ErrorCode;
+import com.example.cafe.common.response.PageResponse;
 import com.example.cafe.feature.auth.repository.UserRepository;
 import com.example.cafe.feature.inventory.dto.request.StockReceiptRequest;
 import com.example.cafe.feature.inventory.dto.response.StockMovementResponse;
 import com.example.cafe.feature.inventory.repository.IngredientRepository;
 import com.example.cafe.feature.inventory.repository.StockMovementRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -161,18 +164,45 @@ public class InventoryServiceImpl implements InventoryService {
     return toResponse(movement);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public PageResponse<StockMovementResponse> getReceiptHistory(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+
+    var pageable = PageRequest.of(safePage,
+        safeSize,
+        Sort.by(Sort.Order.desc("createdAt"),
+            Sort.Order.desc("id")
+        )
+    );
+
+    var movements = stockMovementRepository.findByType(StockMovementType.RECEIPT, pageable);
+    return PageResponse.from(movements.map(this::toResponse));
+  }
+
   private StockMovementResponse toResponse(StockMovement movement) {
+    var ingredient = movement.getIngredient();
+    var product = movement.getProduct();
+    var staff = movement.getPerformedBy();
+
+    String staffName = staff.getFullName();
+    if (staffName == null || staffName.isBlank()) {
+      staffName = staff.getUsername();
+    }
+
     return new StockMovementResponse(
         movement.getId(),
         movement.getType(),
-        movement.getIngredient() == null
-            ? null : movement.getIngredient().getId(),
-        movement.getProduct() == null
-            ? null : movement.getProduct().getId(),
+        ingredient == null ? null : ingredient.getId(),
+        product == null ? null : product.getId(),
+        ingredient != null ? ingredient.getName() : product.getName(),
+        ingredient != null ? ingredient.getUnit() : "cái",
         movement.getQuantityDelta(),
         movement.getAvailableBefore(),
         movement.getAvailableAfter(),
-        movement.getPerformedBy().getId(),
+        staff.getId(),
+        staffName,
         movement.getNote(),
         movement.getCreatedAt()
     );

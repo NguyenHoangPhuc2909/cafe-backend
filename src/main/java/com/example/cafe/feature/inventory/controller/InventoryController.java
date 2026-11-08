@@ -1,6 +1,7 @@
 package com.example.cafe.feature.inventory.controller;
 
 import com.example.cafe.common.response.ApiResponse;
+import com.example.cafe.common.response.PageResponse;
 import com.example.cafe.feature.inventory.dto.request.StockReceiptRequest;
 import com.example.cafe.feature.inventory.dto.response.PackagedStockResponse;
 import com.example.cafe.feature.inventory.dto.response.StockMovementResponse;
@@ -40,5 +41,18 @@ public class InventoryController {
     return ResponseEntity.ok()
         .cacheControl(CacheControl.noStore())
         .body(ApiResponse.ok(response));
+  }
+
+  @GetMapping("/receipts")
+  public ResponseEntity<ApiResponse<PageResponse<StockMovementResponse>>>
+  getReceiptHistory(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size
+  ) {
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.noStore())
+        .body(ApiResponse.ok(
+            inventoryService.getReceiptHistory(page, size)
+        ));
   }
 }
