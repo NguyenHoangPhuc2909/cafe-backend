@@ -9,7 +9,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@Entity@Table(name = "products")
+@Entity
+@Table(name = "products")
 public class Product {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +24,9 @@ public class Product {
 
   @Column(nullable = false, precision = 12, scale = 2)
   private BigDecimal price;
+
+  @Column(nullable = false, length = 20)
+  private String unit; // Đơn vị tính (gram, ml, lít, cái...)
 
   @Column(name = "image_url", columnDefinition = "TEXT")
   private String imageUrl;

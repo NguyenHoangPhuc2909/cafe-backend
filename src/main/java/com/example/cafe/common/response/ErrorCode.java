@@ -55,6 +55,7 @@ public enum ErrorCode {
   INVALID_TABLE_SESSION_TOKEN(HttpStatus.UNAUTHORIZED, "Token phiên không hợp lệ hoặc đã hết hạn"),
 
   // Tồn kho
+  INVALID_STOCK_HISTORY_QUERY(HttpStatus.BAD_REQUEST, "Bộ lọc lịch sử nhập kho không hợp lệ"),
   PACKAGED_QUANTITY_NOT_INTEGER(HttpStatus.BAD_REQUEST, "Số lượng hàng đóng gói phải là số nguyên"),
   STOCK_RECEIPT_CONFLICT(HttpStatus.CONFLICT, "Mã yêu cầu nhập kho đã được sử dụng với nội dung khác"),
   INVALID_STOCK_RECEIPT(HttpStatus.BAD_REQUEST, "Thông tin nhập kho không hợp lệ. Chọn đúng một nguyên liệu hoặc hàng đóng gói");

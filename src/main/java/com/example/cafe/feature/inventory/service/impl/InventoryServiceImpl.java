@@ -10,8 +10,10 @@ import com.example.cafe.feature.inventory.dto.request.StockReceiptRequest;
 import com.example.cafe.feature.inventory.dto.response.StockMovementResponse;
 import com.example.cafe.feature.inventory.repository.IngredientRepository;
 import com.example.cafe.feature.inventory.repository.StockMovementRepository;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,9 @@ import com.example.cafe.feature.inventory.service.InventoryService;
 
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,7 +43,7 @@ public class InventoryServiceImpl implements InventoryService {
   public List<PackagedStockResponse> getPackagedStock() {
     return productRepository.findByProductTypeOrderByIdAsc(ProductType.PACKAGED)
         .stream()
-        .map(product -> new PackagedStockResponse(product.getId(), product.getName(), product.getStockQuantity(), product.getIsActive()))
+        .map(product -> new PackagedStockResponse(product.getId(), product.getName(), product.getStockQuantity(), product.getIsActive(), product.getUnit()))
         .toList();
   }
 
@@ -166,18 +171,76 @@ public class InventoryServiceImpl implements InventoryService {
 
   @Override
   @Transactional(readOnly = true)
-  public PageResponse<StockMovementResponse> getReceiptHistory(int page, int size) {
+  public PageResponse<StockMovementResponse> getReceiptHistory(
+      int page,
+      int size,
+      LocalDate fromDate,
+      LocalDate toDate,
+      Long ingredientId,
+      Long productId
+  ) {
+    if ((fromDate != null && toDate != null && fromDate.isAfter(toDate))
+        || LocalDate.MAX.equals(toDate)
+        || (ingredientId != null && ingredientId <= 0)
+        || (productId != null && productId <= 0)
+        || (ingredientId != null && productId != null)) {
+      throw new AppException(ErrorCode.INVALID_STOCK_HISTORY_QUERY);
+    }
+
+    var zone = ZoneId.of("Asia/Ho_Chi_Minh");
+
+    var fromInstant = fromDate == null ? null : fromDate.atStartOfDay(zone).toInstant();
+
+    var toExclusive = toDate == null ? null : toDate.plusDays(1).atStartOfDay(zone).toInstant();
+
+    Specification<StockMovement> spec = (root, query, cb) -> {
+      var conditions = new ArrayList<Predicate>();
+
+      conditions.add(
+          cb.equal(root.get("type"), StockMovementType.RECEIPT)
+      );
+
+      if (fromInstant != null) {
+        conditions.add(
+            cb.greaterThanOrEqualTo(root.get("createdAt"), fromInstant)
+        );
+      }
+
+      if (toExclusive != null) {
+        conditions.add(
+            cb.lessThan(root.get("createdAt"), toExclusive)
+        );
+      }
+
+      if (ingredientId != null) {
+        conditions.add(
+            cb.equal(root.get("ingredient").get("id"), ingredientId)
+        );
+      }
+
+      if (productId != null) {
+        conditions.add(
+            cb.equal(root.get("product").get("id"), productId)
+        );
+      }
+
+      return cb.and(conditions.toArray(new Predicate[0]));
+    };
+
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 100);
 
-    var pageable = PageRequest.of(safePage,
+    var pageable = PageRequest.of(
+        safePage,
         safeSize,
-        Sort.by(Sort.Order.desc("createdAt"),
+        Sort.by(
+            Sort.Order.desc("createdAt"),
             Sort.Order.desc("id")
         )
     );
 
-    var movements = stockMovementRepository.findByType(StockMovementType.RECEIPT, pageable);
+    var movements = stockMovementRepository.findAll(spec, pageable);
+
     return PageResponse.from(movements.map(this::toResponse));
   }
 
@@ -197,7 +260,7 @@ public class InventoryServiceImpl implements InventoryService {
         ingredient == null ? null : ingredient.getId(),
         product == null ? null : product.getId(),
         ingredient != null ? ingredient.getName() : product.getName(),
-        ingredient != null ? ingredient.getUnit() : "cái",
+        ingredient != null ? ingredient.getUnit() : product.getUnit(),
         movement.getQuantityDelta(),
         movement.getAvailableBefore(),
         movement.getAvailableAfter(),

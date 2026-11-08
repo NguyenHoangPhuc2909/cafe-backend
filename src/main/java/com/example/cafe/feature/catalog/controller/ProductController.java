@@ -40,11 +40,4 @@ public class ProductController {
   public ApiResponse<ProductResponse> updateProduct(@PathVariable Long id, @RequestBody @Valid ProductRequest request) {
     return ApiResponse.ok(productService.updateProduct(id, request));
   }
-
-  // 5. Xóa sản phẩm
-  @DeleteMapping("/{id}")
-  public ApiResponse<String> deleteProduct(@PathVariable Long id) {
-    productService.deleteProduct(id);
-    return ApiResponse.ok("Đã xóa sản phẩm thành công!");
-  }
 }

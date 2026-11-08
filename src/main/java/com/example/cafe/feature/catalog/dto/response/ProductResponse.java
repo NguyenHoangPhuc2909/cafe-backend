@@ -1,5 +1,6 @@
 package com.example.cafe.feature.catalog.dto.response;
 
+import com.example.cafe.common.enums.ProductType;
 import lombok.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -15,10 +16,12 @@ public class ProductResponse {
   private BigDecimal price;
   private String description;
   private String imageUrl;
+  private String unit;
 
   private Boolean isActive;
   private Boolean sizeEnabled;
   private List<SizeOption> sizes;
+  private ProductType productType;
 
   public record SizeOption(DrinkSize size, BigDecimal price) {}
 

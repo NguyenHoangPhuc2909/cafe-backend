@@ -2,32 +2,36 @@ package com.example.cafe.feature.catalog.mapper;
 
 import com.example.cafe.common.entity.catalog.Category;
 import com.example.cafe.common.entity.catalog.Product;
+import com.example.cafe.common.enums.ProductType;
 import com.example.cafe.feature.catalog.dto.request.ProductRequest;
 import com.example.cafe.feature.catalog.dto.response.ProductResponse;
 import com.example.cafe.feature.catalog.service.ProductSizePricing;
 import com.example.cafe.common.enums.DrinkSize;
+
 import java.util.List;
 
 
 public class ProductMapper {
-  public static ProductResponse toResponse(Product product){
-    if(product == null) return null;
+  public static ProductResponse toResponse(Product product) {
+    if (product == null) return null;
     boolean supportsSizes = ProductSizePricing.supportsSizes(product);
 
     return ProductResponse.builder()
-    .id(product.getId())
+        .id(product.getId())
         .name(product.getName())
+        .unit(product.getUnit())
         .description(product.getDescription())
         .price(product.getPrice())
         .imageUrl(product.getImageUrl())
         .isActive(product.getIsActive())
+        .productType(product.getProductType())
         .sizeEnabled(supportsSizes)
         .sizes(supportsSizes ? List.of(
             new ProductResponse.SizeOption(DrinkSize.M, ProductSizePricing.price(product, DrinkSize.M)),
             new ProductResponse.SizeOption(DrinkSize.L, ProductSizePricing.price(product, DrinkSize.L))) : List.of())
         .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
         .categoryName(product.getCategory() != null ?
-        product.getCategory().getName() : null).build();
+            product.getCategory().getName() : null).build();
   }
 
   public static Product toEntity(ProductRequest request, Category category) {
@@ -39,7 +43,16 @@ public class ProductMapper {
     product.setDescription(request.getDescription());
     product.setPrice(request.getPrice());
     product.setImageUrl(request.getImageUrl());
-    product.setSizeEnabled(Boolean.TRUE.equals(request.getSizeEnabled()));
+    product.setProductType(request.getProductType());
+    product.setSizeEnabled(
+        request.getProductType() == ProductType.MADE_TO_ORDER
+            && Boolean.TRUE.equals(request.getSizeEnabled())
+    );
+    product.setUnit(
+        request.getUnit() == null || request.getUnit().isBlank()
+            ? null
+            : request.getUnit().strip()
+    );
 
     // Gán object Category vào Product
     product.setCategory(category);
@@ -47,5 +60,6 @@ public class ProductMapper {
     // Mặc định khi tạo mới thì sản phẩm sẽ kích hoạt luôn
     product.setIsActive(true);
 
-    return product;}
+    return product;
+  }
 }

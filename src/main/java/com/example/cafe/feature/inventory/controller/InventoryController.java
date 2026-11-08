@@ -8,11 +8,13 @@ import com.example.cafe.feature.inventory.dto.response.StockMovementResponse;
 import com.example.cafe.feature.inventory.service.InventoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -47,12 +49,30 @@ public class InventoryController {
   public ResponseEntity<ApiResponse<PageResponse<StockMovementResponse>>>
   getReceiptHistory(
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size
+      @RequestParam(defaultValue = "20") int size,
+
+      @RequestParam(required = false)
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+      LocalDate fromDate,
+
+      @RequestParam(required = false)
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+      LocalDate toDate,
+
+      @RequestParam(required = false) Long ingredientId,
+      @RequestParam(required = false) Long productId
   ) {
     return ResponseEntity.ok()
         .cacheControl(CacheControl.noStore())
         .body(ApiResponse.ok(
-            inventoryService.getReceiptHistory(page, size)
+            inventoryService.getReceiptHistory(
+                page,
+                size,
+                fromDate,
+                toDate,
+                ingredientId,
+                productId
+            )
         ));
   }
 }

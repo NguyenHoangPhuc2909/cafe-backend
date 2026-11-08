@@ -1,8 +1,10 @@
 package com.example.cafe.feature.catalog.dto.request;
 
+import com.example.cafe.common.enums.ProductType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -21,4 +23,11 @@ public class ProductRequest {
 
   @NotNull(message = "Sản phẩm phải thuộc về một danh mục (categoryId)")
   private Long categoryId;
+
+  @NotBlank(message = "Đơn vị tính không được để trống")
+  @Size(max = 20, message = "Đơn vị tính không được vượt quá 20 ký tự")
+  private String unit;
+
+  @NotNull(message = "Loại sản phẩm không được để trống")
+  private ProductType productType;
 }
