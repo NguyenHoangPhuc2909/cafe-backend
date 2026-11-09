@@ -20,17 +20,16 @@ public class Order {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  // Quan hệ Many-to-One: Nhiều đơn hàng do 1 user đặt
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id")
-  private User user;
-
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "table_session_id")
   private TableSession tableSession;
 
   @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
   private BigDecimal totalAmount;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "created_by_id")
+  private User createdBy;
 
   // Trạng thái đơn hàng: PENDING, COMPLETED, CANCELLED...
   @Enumerated(EnumType.STRING)

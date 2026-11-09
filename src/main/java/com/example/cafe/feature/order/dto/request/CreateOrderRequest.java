@@ -11,7 +11,7 @@ import com.example.cafe.common.enums.DrinkOptionLevel;
 import java.util.List;
 
 @Data
-public class GuestOrderRequest {
+public class CreateOrderRequest {
   @NotEmpty(message = "Đơn hàng phải có ít nhất một món")
   @Valid
   private List<@NotNull ItemRequest> items;

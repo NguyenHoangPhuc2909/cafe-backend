@@ -6,7 +6,7 @@ import com.example.cafe.common.enums.DrinkOptionLevel;
 import com.example.cafe.common.exception.AppException;
 import com.example.cafe.common.response.ErrorCode;
 import com.example.cafe.feature.catalog.service.ProductSizePricing;
-import com.example.cafe.feature.order.dto.request.GuestOrderRequest;
+import com.example.cafe.feature.order.dto.request.CreateOrderRequest;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,7 +27,7 @@ public final class GuestOrderLines {
     return requested == null ? DrinkOptionLevel.DEFAULT : requested;
   }
 
-  public static List<Line> collect(GuestOrderRequest request, Map<Long, Product> products) {
+  public static List<Line> collect(CreateOrderRequest request, Map<Long, Product> products) {
     Map<Key, Integer> quantities = new LinkedHashMap<>();
     try {
       for (var item : request.getItems()) {

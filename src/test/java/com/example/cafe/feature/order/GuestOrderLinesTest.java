@@ -9,7 +9,7 @@ import com.example.cafe.common.enums.ProductType;
 import com.example.cafe.common.exception.AppException;
 import com.example.cafe.common.response.ErrorCode;
 import com.example.cafe.feature.catalog.mapper.ProductMapper;
-import com.example.cafe.feature.order.dto.request.GuestOrderRequest;
+import com.example.cafe.feature.order.dto.request.CreateOrderRequest;
 import com.example.cafe.feature.order.mapper.OrderMapper;
 import com.example.cafe.feature.order.service.GuestOrderLines;
 import java.math.BigDecimal;
@@ -28,15 +28,15 @@ class GuestOrderLinesTest {
     product.setSizeEnabled(sizes);
     return product;
   }
-  private GuestOrderRequest.ItemRequest item(DrinkSize size, int quantity) {
-    var item = new GuestOrderRequest.ItemRequest();
+  private CreateOrderRequest.ItemRequest item(DrinkSize size, int quantity) {
+    var item = new CreateOrderRequest.ItemRequest();
     item.setProductId(12L);
     item.setSize(size);
     item.setQuantity(quantity);
     return item;
   }
-  private GuestOrderRequest request(GuestOrderRequest.ItemRequest... items) {
-    var request = new GuestOrderRequest();
+  private CreateOrderRequest request(CreateOrderRequest.ItemRequest... items) {
+    var request = new CreateOrderRequest();
     request.setItems(List.of(items));
     return request;
   }

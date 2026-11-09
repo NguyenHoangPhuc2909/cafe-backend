@@ -3,11 +3,15 @@ package com.example.cafe.feature.order.controller;
 import com.example.cafe.common.enums.OrderPaymentStatus;
 import com.example.cafe.common.response.ApiResponse;
 import com.example.cafe.common.response.PageResponse;
+import com.example.cafe.feature.order.dto.request.StaffOrderRequest;
 import com.example.cafe.feature.order.dto.response.OrderResponse;
 import com.example.cafe.feature.order.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -54,6 +58,21 @@ public class StaffOrderController {
     OrderResponse response = orderService.completeOrder(orderId);
 
     return ResponseEntity.ok()
+        .cacheControl(CacheControl.noStore())
+        .body(ApiResponse.ok(response));
+  }
+
+  @PostMapping
+  public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
+      @Valid @RequestBody StaffOrderRequest request,
+      Authentication authentication) {
+
+    OrderResponse response = orderService.createStaffOrder(
+        authentication.getName(),
+        request
+    );
+
+    return ResponseEntity.status(HttpStatus.CREATED)
         .cacheControl(CacheControl.noStore())
         .body(ApiResponse.ok(response));
   }
