@@ -42,12 +42,6 @@ public enum ErrorCode {
   TABLE_INACTIVE(HttpStatus.CONFLICT, "Bàn đang ngừng sử dụng"),
 
   // Thanh toán
-  INVALID_CASH_ENTRY(HttpStatus.BAD_REQUEST, "Thông tin tiền mặt không hợp lệ. Nhập số tiền nguyên và nội dung đầy đủ"),
-  CASH_DAY_CHANGED(HttpStatus.CONFLICT, "Đã sang ngày mới theo giờ Việt Nam. Tải lại quỹ trước khi ghi nhận"),
-  CASH_DATA_CHANGED(HttpStatus.CONFLICT, "Quỹ tiền mặt đã có giao dịch mới. Tải lại và kiểm tra số thực đếm trước khi lưu"),
-  CASH_REQUEST_CONFLICT(HttpStatus.CONFLICT, "Mã yêu cầu tiền mặt đã được dùng với nội dung khác"),
-  CASH_NOTE_REQUIRED(HttpStatus.BAD_REQUEST, "Vui lòng ghi chú nguyên nhân chênh lệch tiền mặt"),
-  CASH_ACTIVE_ORDERS(HttpStatus.CONFLICT, "Vui lòng xử lý hết đơn chờ thanh toán và đang pha chế trước khi lưu đối chiếu tiền mặt"),
   PAYMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "Bạn không có quyền xác nhận thanh toán"),
   ORDER_NOT_PAYABLE(HttpStatus.CONFLICT, "Đơn hàng không đủ điều kiện thanh toán"),
   PAYMENT_EXPIRED(HttpStatus.CONFLICT, "Đơn hàng đã quá hạn thanh toán"),
@@ -62,11 +56,6 @@ public enum ErrorCode {
   INVALID_TABLE_SESSION_TOKEN(HttpStatus.UNAUTHORIZED, "Token phiên không hợp lệ hoặc đã hết hạn"),
 
   // Tồn kho
-  INVALID_STOCKTAKE(HttpStatus.BAD_REQUEST, "Phiếu kiểm kho không hợp lệ. Kiểm tra số thực tế và ghi chú"),
-  STOCKTAKE_ACTIVE_ORDERS(HttpStatus.CONFLICT, "Vui lòng xử lý hết đơn chờ thanh toán và đang pha chế trước khi kiểm kho"),
-  STOCKTAKE_STALE(HttpStatus.CONFLICT, "Tồn kho đã thay đổi. Tải lại số đối chiếu và kiểm tra lại số thực tế trước khi lưu"),
-  STOCKTAKE_CONFLICT(HttpStatus.CONFLICT, "Mã phiếu kiểm kho đã được sử dụng với nội dung khác"),
-  STOCKTAKE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy phiếu kiểm kho"),
   INVALID_STOCK_HISTORY_QUERY(HttpStatus.BAD_REQUEST, "Bộ lọc lịch sử nhập kho không hợp lệ"),
   PACKAGED_QUANTITY_NOT_INTEGER(HttpStatus.BAD_REQUEST, "Số lượng hàng đóng gói phải là số nguyên"),
   STOCK_RECEIPT_CONFLICT(HttpStatus.CONFLICT, "Mã yêu cầu nhập kho đã được sử dụng với nội dung khác"),

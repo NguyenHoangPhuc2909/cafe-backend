@@ -17,20 +17,6 @@ import org.springframework.data.repository.query.Param;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
   Optional<Payment> findByOrder_Id(Long orderId);
 
-  interface CashTotal {
-    BigDecimal getAmount();
-    long getPaymentCount();
-    long getLastPaymentId();
-  }
-
-  @Query("""
-      SELECT COALESCE(SUM(p.amount), 0) AS amount, COUNT(p) AS paymentCount,
-        COALESCE(MAX(p.id), 0) AS lastPaymentId
-      FROM Payment p WHERE p.method = com.example.cafe.common.enums.PaymentMethod.CASH
-        AND p.paidAt >= :from AND p.paidAt < :until
-      """)
-  CashTotal summarizeSharedCashDay(@Param("from") Instant from, @Param("until") Instant until);
-
   interface MethodTotal {
     PaymentMethod getMethod();
     long getPaymentCount();
