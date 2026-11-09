@@ -42,6 +42,12 @@ public enum ErrorCode {
   TABLE_INACTIVE(HttpStatus.CONFLICT, "Bàn đang ngừng sử dụng"),
 
   // Thanh toán
+  INVALID_CASH_ENTRY(HttpStatus.BAD_REQUEST, "Thông tin tiền mặt không hợp lệ. Nhập số tiền nguyên và nội dung đầy đủ"),
+  CASH_DAY_CHANGED(HttpStatus.CONFLICT, "Đã sang ngày mới theo giờ Việt Nam. Tải lại quỹ trước khi ghi nhận"),
+  CASH_DATA_CHANGED(HttpStatus.CONFLICT, "Quỹ tiền mặt đã có giao dịch mới. Tải lại và kiểm tra số thực đếm trước khi lưu"),
+  CASH_REQUEST_CONFLICT(HttpStatus.CONFLICT, "Mã yêu cầu tiền mặt đã được dùng với nội dung khác"),
+  CASH_NOTE_REQUIRED(HttpStatus.BAD_REQUEST, "Vui lòng ghi chú nguyên nhân chênh lệch tiền mặt"),
+  CASH_ACTIVE_ORDERS(HttpStatus.CONFLICT, "Vui lòng xử lý hết đơn chờ thanh toán và đang pha chế trước khi lưu đối chiếu tiền mặt"),
   PAYMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "Bạn không có quyền xác nhận thanh toán"),
   ORDER_NOT_PAYABLE(HttpStatus.CONFLICT, "Đơn hàng không đủ điều kiện thanh toán"),
   PAYMENT_EXPIRED(HttpStatus.CONFLICT, "Đơn hàng đã quá hạn thanh toán"),
