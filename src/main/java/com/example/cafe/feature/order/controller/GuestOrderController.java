@@ -1,7 +1,7 @@
 package com.example.cafe.feature.order.controller;
 
 import com.example.cafe.common.response.ApiResponse;
-import com.example.cafe.feature.order.dto.request.GuestOrderRequest;
+import com.example.cafe.feature.order.dto.request.CreateOrderRequest;
 import com.example.cafe.feature.order.dto.response.OrderResponse;
 import com.example.cafe.feature.order.service.OrderService;
 
@@ -20,7 +20,7 @@ public class GuestOrderController {
 
   @PostMapping
   ResponseEntity<ApiResponse<OrderResponse>> createOrder(@RequestHeader( value="X-Table-Session-Token", required = false)
-                                                         String token, @Valid @RequestBody GuestOrderRequest request){
+                                                         String token, @Valid @RequestBody CreateOrderRequest request){
     OrderResponse response = orderService.createGuestOrder(token, request);
     return ResponseEntity.status(HttpStatus.CREATED)
         .cacheControl(CacheControl.noStore())

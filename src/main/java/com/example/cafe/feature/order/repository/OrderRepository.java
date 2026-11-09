@@ -27,8 +27,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   @Query("""
       SELECT o.id
       FROM Order o
-      WHERE o.tableSession IS NOT NULL
-        AND o.status = com.example.cafe.common.enums.OrderStatus.PENDING
+      WHERE  o.status = com.example.cafe.common.enums.OrderStatus.PENDING
         AND o.paymentStatus = :paymentStatus
         AND o.paymentExpiresAt <= :now
       ORDER BY o.id ASC

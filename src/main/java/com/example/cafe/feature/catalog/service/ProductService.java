@@ -15,8 +15,6 @@ public interface ProductService {
 
   ProductResponse updateProduct(Long id, ProductRequest request);
 
-  void deleteProduct(Long id);
-
   List<ProductResponse> getPublicMenu();
 
   ProductResponse updateProductActive(Long id, boolean active);

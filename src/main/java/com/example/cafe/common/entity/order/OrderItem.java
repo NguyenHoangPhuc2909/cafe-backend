@@ -1,14 +1,13 @@
 package com.example.cafe.common.entity.order;
 
 import com.example.cafe.common.entity.catalog.Product;
-import com.example.cafe.common.entity.catalog.Topping;
+import com.example.cafe.common.enums.DrinkSize;
+import com.example.cafe.common.enums.DrinkOptionLevel;
 
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @Entity
@@ -35,10 +34,16 @@ public class OrderItem {
   @Column(nullable = false, precision = 12, scale = 2)
   private BigDecimal price;
 
-  // Quan hệ Many-to-Many: Một món trong đơn có thể gọi nhiều topping, 1 topping thuộc nhiều món
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(name = "order_item_toppings",
-      joinColumns = @JoinColumn(name = "order_item_id"),
-      inverseJoinColumns = @JoinColumn(name = "topping_id"))
-  private List<Topping> toppings = new ArrayList<>();
+  @Enumerated(EnumType.STRING)
+  @Column(name = "drink_size", length = 1)
+  private DrinkSize size;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "ice_level", length = 10)
+  private DrinkOptionLevel iceLevel;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "sweetness_level", length = 10)
+  private DrinkOptionLevel sweetnessLevel;
+
 }

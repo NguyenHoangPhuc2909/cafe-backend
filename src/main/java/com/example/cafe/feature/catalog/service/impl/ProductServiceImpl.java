@@ -2,6 +2,7 @@ package com.example.cafe.feature.catalog.service.impl;
 
 import com.example.cafe.common.entity.catalog.Category;
 import com.example.cafe.common.entity.catalog.Product;
+import com.example.cafe.common.enums.ProductType;
 import com.example.cafe.common.exception.AppException;
 import com.example.cafe.common.response.ErrorCode;
 import com.example.cafe.feature.catalog.dto.request.ProductRequest;
@@ -19,8 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service 
-@RequiredArgsConstructor 
+@Service
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
   private final ProductRepository productRepository;
   private final CategoryRepository categoryRepository;
@@ -51,29 +52,38 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
+  @Transactional
   public ProductResponse updateProduct(Long id, ProductRequest request) {
-    Product product = productRepository.findById(id)
+    Product product = productRepository.findByIdForUpdate(id)
         .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
     Category category = categoryRepository.findById(request.getCategoryId())
         .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+    if (request.getProductType() != product.getProductType()) {
+      throw new AppException(ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+    }
 
     product.setName(request.getName());
     product.setDescription(request.getDescription());
     product.setPrice(request.getPrice());
     product.setImageUrl(request.getImageUrl());
     product.setCategory(category);
+    if (product.getProductType() == ProductType.PACKAGED) {
+      product.setSizeEnabled(false);
+    } else if (request.getSizeEnabled() != null) {
+      product.setSizeEnabled(request.getSizeEnabled());
+    }
+    if (request.getUnit() != null) {
+      product.setUnit(
+          request.getUnit().isBlank()
+              ? null
+              : request.getUnit().strip()
+      );
+    }
 
     product = productRepository.save(product);
     return ProductMapper.toResponse(product);
-  }
-
-  @Override
-  public void deleteProduct(Long id) {
-    Product product = productRepository.findById(id)
-        .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-    product.setIsActive(false);
-    productRepository.save(product);
   }
 
   @Override

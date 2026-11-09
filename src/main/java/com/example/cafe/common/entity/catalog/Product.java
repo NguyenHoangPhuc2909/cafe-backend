@@ -9,7 +9,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@Entity@Table(name = "products")
+@Entity
+@Table(name = "products")
 public class Product {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,11 +25,17 @@ public class Product {
   @Column(nullable = false, precision = 12, scale = 2)
   private BigDecimal price;
 
+  @Column(nullable = false, length = 20)
+  private String unit; // Đơn vị tính (gram, ml, lít, cái...)
+
   @Column(name = "image_url", columnDefinition = "TEXT")
   private String imageUrl;
 
   @Column(name = "is_active")
   private Boolean isActive = true;
+
+  @Column(name = "size_enabled")
+  private Boolean sizeEnabled = false;
 
   // Quan hệ Many-to-One: Nhiều sản phẩm trong cùng 1 loại
   @ManyToOne(fetch = FetchType.LAZY)

@@ -5,11 +5,13 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import com.example.cafe.common.enums.DrinkSize;
+import com.example.cafe.common.enums.DrinkOptionLevel;
 
 import java.util.List;
 
 @Data
-public class GuestOrderRequest {
+public class CreateOrderRequest {
   @NotEmpty(message = "Đơn hàng phải có ít nhất một món")
   @Valid
   private List<@NotNull ItemRequest> items;
@@ -25,5 +27,8 @@ public class GuestOrderRequest {
     @NotNull
     @Min(1)
     private Integer quantity;
+    private DrinkSize size;
+    private DrinkOptionLevel iceLevel;
+    private DrinkOptionLevel sweetnessLevel;
   }
 }
