@@ -36,8 +36,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
@@ -107,7 +105,7 @@ public class OrderServiceImpl implements OrderService {
     // 1. Xác minh token và khoá phiên
     TableSession session = resolveGuestSessionForOrder(token);
 
-    return orderCreationService.create(session, null, request);
+    return orderCreationService.create(session, null, request, OrderType.DINE_IN);
   }
 
   @Override
@@ -121,7 +119,7 @@ public class OrderServiceImpl implements OrderService {
       return false;
     }
 
-    // // Chỉ xử lý đơn đang chờ thanh toán và có hạn thanh toán
+    // Chỉ xử lý đơn đang chờ thanh toán và có hạn thanh toán
     if (order.getStatus() != OrderStatus.PENDING
         || order.getPaymentStatus() != OrderPaymentStatus.UNPAID
         || order.getPaymentExpiresAt() == null) {
@@ -190,6 +188,19 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public PageResponse<OrderResponse> getGuestOrders(String token, int page, int size) {
+    if (page < 0 || size < 1 || size > 100) {
+      throw new AppException(ErrorCode.INVALID_ORDER_QUERY);
+    }
+    var session = tableSessionService.getGuestSession(token);
+    var orders = orderRepository.findByTableSession_IdOrderByCreatedAtDescIdDesc(
+        session.getId(), PageRequest.of(page, size));
+    return PageResponse.from(orders.map(order -> OrderMapper.toResponse(
+        order, orderItemRepository.findByOrderId(order.getId()))));
+  }
+
+  @Override
   @Transactional
   public OrderResponse completeOrder(Long orderId) {
     if (orderId == null || orderId <= 0) {
@@ -236,7 +247,7 @@ public class OrderServiceImpl implements OrderService {
         throw new AppException(ErrorCode.TABLE_INACTIVE);
       }
     }
-    return orderCreationService.create(session, staff, request);
+    return orderCreationService.create(session, staff, request, request.getOrderType());
   }
 
   @Override

@@ -25,4 +25,11 @@ public class TableSessionController {
   public ApiResponse<TableSessionResponse> getOpenSession(@PathVariable("tableId") Long tableId){
     return ApiResponse.ok(tableSessionService.getOpenSession(tableId));
   }
+
+  @PatchMapping("/{tableId}/sessions/{sessionId}/close")
+  public ResponseEntity<ApiResponse<TableSessionResponse>> closeSession(
+      @PathVariable("tableId") Long tableId, @PathVariable("sessionId") Long sessionId) {
+    return ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore())
+        .body(ApiResponse.ok(tableSessionService.closeSession(tableId, sessionId)));
+  }
 }

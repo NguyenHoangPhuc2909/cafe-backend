@@ -32,6 +32,7 @@ public class OrderMapper {
         .sessionId(session != null ? session.getId() : null)
         .tableId(table != null ? table.getId() : null)
         .tableName(table != null ? table.getName() : null)
+        .orderType(order.getOrderType())
         .totalAmount(order.getTotalAmount())
         .status(order.getStatus())
         .paymentStatus(order.getPaymentStatus())

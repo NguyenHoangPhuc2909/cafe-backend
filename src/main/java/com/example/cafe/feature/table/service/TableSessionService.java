@@ -6,6 +6,7 @@ import com.example.cafe.feature.table.dto.response.TableSessionResponse;
 
 public interface TableSessionService {
   TableSessionResponse openSession(Long tableId);
+  TableSessionResponse closeSession(Long tableId, Long sessionId);
   TableSessionResponse getOpenSession(Long tableId);
   TableSessionAccessResponse grantGuestAccess(String qrCode);
   TableSessionResponse getGuestSession(String token);

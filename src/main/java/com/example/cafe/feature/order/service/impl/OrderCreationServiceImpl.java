@@ -10,6 +10,7 @@ import com.example.cafe.common.entity.order.OrderItem;
 import com.example.cafe.common.entity.table.TableSession;
 import com.example.cafe.common.enums.OrderPaymentStatus;
 import com.example.cafe.common.enums.OrderStatus;
+import com.example.cafe.common.enums.OrderType;
 import com.example.cafe.common.enums.ProductType;
 import com.example.cafe.common.enums.StockReservationStatus;
 import com.example.cafe.common.exception.AppException;
@@ -54,7 +55,8 @@ public class OrderCreationServiceImpl implements OrderCreationService {
   public OrderResponse create(
       TableSession session,
       User createdBy,
-      CreateOrderRequest request) {
+      CreateOrderRequest request,
+      OrderType orderType) {
 
     // 2. Gộp số lượng và khoá sản phẩm
     Map<Long, Integer> quantities = collectQuantities(request);
@@ -99,6 +101,7 @@ public class OrderCreationServiceImpl implements OrderCreationService {
     Order order = new Order();
     order.setTableSession(session);
     order.setCreatedBy(createdBy);
+    order.setOrderType(orderType);
     order.setStatus(OrderStatus.PENDING);
     order.setPaymentStatus(OrderPaymentStatus.UNPAID);
     order.setTotalAmount(totalAmount);

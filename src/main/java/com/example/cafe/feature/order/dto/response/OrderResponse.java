@@ -1,6 +1,7 @@
 package com.example.cafe.feature.order.dto.response;
 
 import com.example.cafe.common.enums.OrderPaymentStatus;
+import com.example.cafe.common.enums.OrderType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -21,6 +22,7 @@ public class OrderResponse {
   private Long sessionId;
   private Long tableId;
   private String tableName;
+  private OrderType orderType;
   private BigDecimal totalAmount;
   private OrderStatus status;
   private LocalDateTime createdAt;

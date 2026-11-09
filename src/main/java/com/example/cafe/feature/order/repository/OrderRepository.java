@@ -41,12 +41,17 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   // Khách xem một đơn thuộc phiên bàn của mình
   Optional<Order> findByIdAndTableSession_Id(Long orderId, Long sessionId);
 
+  Page<Order> findByTableSession_IdOrderByCreatedAtDescIdDesc(Long sessionId, Pageable pageable);
+
+  boolean existsByTableSession_IdAndStatusIn(Long sessionId, List<OrderStatus> statuses);
+
   // Danh sách đơn
   @Query("""
           SELECT o FROM Order o
+          LEFT JOIN o.tableSession session
           WHERE (:status IS NULL OR o.status = :status)
             AND (:paymentStatus IS NULL OR o.paymentStatus = :paymentStatus)
-            AND (:sessionId IS NULL OR o.tableSession.id = :sessionId)
+            AND (:sessionId IS NULL OR session.id = :sessionId)
       """)
   Page<Order> findForStaff(
       @Param("status") OrderStatus status,

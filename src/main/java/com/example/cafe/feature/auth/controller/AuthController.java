@@ -4,6 +4,10 @@ import com.example.cafe.common.response.ApiResponse;
 import com.example.cafe.feature.auth.dto.request.LoginRequest;
 import com.example.cafe.feature.auth.dto.request.RegisterRequest;
 import com.example.cafe.feature.auth.dto.response.AuthResponse;
+import com.example.cafe.feature.auth.dto.response.StaffAccountResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import com.example.cafe.feature.auth.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -18,13 +22,12 @@ public class AuthController {
   private final AuthService authService;
 
   @PostMapping("/register")
-  public ApiResponse<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-    AuthResponse response = authService.register(request);
-    return ApiResponse.<AuthResponse>builder()
-        .success(true)
-        .message("Đăng ký tài khoản thành công")
-        .data(response)
-        .build();
+  public ResponseEntity<ApiResponse<StaffAccountResponse>> register(@Valid @RequestBody RegisterRequest request) {
+    StaffAccountResponse response = authService.register(request);
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .cacheControl(CacheControl.noStore())
+        .body(ApiResponse.<StaffAccountResponse>builder()
+            .success(true).message("Đã tạo tài khoản nhân viên").data(response).build());
   }
 
   @PostMapping("/login")

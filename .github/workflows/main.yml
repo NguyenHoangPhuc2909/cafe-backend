@@ -23,8 +23,7 @@ jobs:
     - name: Build and Test with Maven
       run: |
         chmod +x mvnw
-        ./mvnw clean package -DskipTests
-      # Lưu ý: Tạm thời bỏ qua test bằng -DskipTests, bạn có thể xóa -DskipTests khi đã viết xong Unit Test
+        ./mvnw clean verify
 
   docker-build-push:
     needs: build-and-test

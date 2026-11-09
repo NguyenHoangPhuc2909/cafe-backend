@@ -14,6 +14,10 @@ public interface CafeTableRepository extends JpaRepository<CafeTable, Long> {
   Optional<CafeTable> findByQrCode(String qrCode);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT t FROM CafeTable t WHERE t.qrCode = :qrCode")
+  Optional<CafeTable> findByQrCodeForUpdate(@Param("qrCode") String qrCode);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT t FROM CafeTable t WHERE t.id = :id")
   Optional<CafeTable> findByIdForUpdate(@Param("id") Long id);
 

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
   private final OrderService orderService;
 
-  // 2. Khách hoặc Admin xem lại chi tiết tờ bill hóa đơn
+  // API tra cứu cũ dành cho nhân viên và quản trị viên.
   @GetMapping("/{id}")
   public ApiResponse<OrderResponse> getOrderById(@PathVariable Long id) {
     return ApiResponse.ok(orderService.getOrderById(id));

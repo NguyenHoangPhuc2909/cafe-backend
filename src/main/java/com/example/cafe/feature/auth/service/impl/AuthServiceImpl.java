@@ -6,6 +6,7 @@ import com.example.cafe.common.response.ErrorCode;
 import com.example.cafe.feature.auth.dto.request.LoginRequest;
 import com.example.cafe.feature.auth.dto.request.RegisterRequest;
 import com.example.cafe.feature.auth.dto.response.AuthResponse;
+import com.example.cafe.feature.auth.dto.response.StaffAccountResponse;
 import com.example.cafe.feature.auth.repository.UserRepository;
 import com.example.cafe.feature.auth.service.AuthService;
 import com.example.cafe.security.JwtTokenProvider;
@@ -13,9 +14,9 @@ import com.example.cafe.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +27,8 @@ public class AuthServiceImpl implements AuthService {
   private final JwtTokenProvider jwtTokenProvider;
 
   @Override
-  public AuthResponse register(RegisterRequest request) {
+  @Transactional
+  public StaffAccountResponse register(RegisterRequest request) {
     if (userRepository.existsByUsername(request.getUsername())) {
       throw new AppException(ErrorCode.USERNAME_EXISTED);
     }
@@ -41,18 +43,16 @@ public class AuthServiceImpl implements AuthService {
     user.setEmail(request.getEmail());
     user.setFullName(request.getFullName());
     user.setRole("STAFF");
-    userRepository.save(user);
-
-    String token = jwtTokenProvider.generateToken(user.getUsername());
-
-    return AuthResponse.builder().accessToken(token).username(user.getUsername()).role(user.getRole()).build();
+    User saved = userRepository.save(user);
+    return new StaffAccountResponse(saved.getId(), saved.getUsername(), saved.getEmail(),
+        saved.getFullName(), saved.getRole());
   }
 
   @Override
   public AuthResponse login(LoginRequest request) {
     try {
       // 1. Xác thực username và password với Spring Security
-      Authentication authentication = authenticationManager.authenticate(
+      authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
       );
 

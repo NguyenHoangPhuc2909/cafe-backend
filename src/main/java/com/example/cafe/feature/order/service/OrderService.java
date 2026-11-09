@@ -21,6 +21,8 @@ public interface OrderService {
 
   OrderResponse getGuestOrder(String token, Long orderId);
 
+  PageResponse<OrderResponse> getGuestOrders(String token, int page, int size);
+
   OrderResponse completeOrder(Long orderId);
 
   OrderResponse createStaffOrder(String username, StaffOrderRequest request);

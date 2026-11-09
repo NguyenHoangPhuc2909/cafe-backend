@@ -5,6 +5,7 @@ import com.example.cafe.common.entity.table.TableSession;
 import com.example.cafe.common.enums.OrderPaymentStatus;
 
 import com.example.cafe.common.enums.OrderStatus;
+import com.example.cafe.common.enums.OrderType;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -30,6 +31,10 @@ public class Order {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "created_by_id")
   private User createdBy;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "order_type", length = 20)
+  private OrderType orderType;
 
   // Trạng thái đơn hàng: PENDING, COMPLETED, CANCELLED...
   @Enumerated(EnumType.STRING)

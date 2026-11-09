@@ -59,11 +59,13 @@ public class SecurityConfig {
                   """);
             }))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
             .requestMatchers(HttpMethod.GET, "/api/public/tables/*").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/public/tables/*/access").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/guest/session").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/guest/orders").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/guest/orders").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/guest/orders/*").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/staff/orders/*/payments").hasRole("STAFF")
             .requestMatchers(HttpMethod.PATCH, "/api/staff/orders/*/complete").hasRole("STAFF")

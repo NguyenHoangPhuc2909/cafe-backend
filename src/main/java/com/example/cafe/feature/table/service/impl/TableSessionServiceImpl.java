@@ -3,6 +3,8 @@ package com.example.cafe.feature.table.service.impl;
 import com.example.cafe.common.entity.table.CafeTable;
 import com.example.cafe.common.entity.table.TableSession;
 import com.example.cafe.common.enums.TableSessionStatus;
+import com.example.cafe.common.enums.OrderStatus;
+import com.example.cafe.feature.order.repository.OrderRepository;
 import com.example.cafe.common.exception.AppException;
 import com.example.cafe.common.response.ErrorCode;
 import com.example.cafe.feature.table.dto.response.TableSessionAccessResponse;
@@ -20,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -28,6 +32,7 @@ public class TableSessionServiceImpl implements TableSessionService {
   private final CafeTableRepository cafeTableRepository;
   private final TableSessionRepository tableSessionRepository;
   private final TableSessionTokenProvider tableSessionTokenProvider;
+  private final OrderRepository orderRepository;
 
   @Override
   @Transactional
@@ -44,12 +49,7 @@ public class TableSessionServiceImpl implements TableSessionService {
       throw new AppException(ErrorCode.TABLE_SESSION_ALREADY_OPEN);
     }
 
-    TableSession session = new TableSession();
-    session.setTable(table);
-    session.setStatus(TableSessionStatus.OPEN);
-
-    TableSession saved = tableSessionRepository.save(session);
-    return TableSessionMapper.toResponse(saved);
+    return TableSessionMapper.toResponse(createSession(table));
   }
 
   @Override
@@ -65,9 +65,29 @@ public class TableSessionServiceImpl implements TableSessionService {
   }
 
   @Override
-  @Transactional(readOnly = true)
+  @Transactional
+  public TableSessionResponse closeSession(Long tableId, Long sessionId) {
+    // Same table-first lock order as opening a session; order creation locks the session.
+    cafeTableRepository.findByIdForUpdate(tableId)
+        .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
+    TableSession session = tableSessionRepository.findByIdForUpdate(sessionId)
+        .filter(value -> value.getTable().getId().equals(tableId))
+        .orElseThrow(() -> new AppException(ErrorCode.TABLE_SESSION_NOT_FOUND));
+    if (session.getStatus() == TableSessionStatus.CLOSE) return TableSessionMapper.toResponse(session);
+    if (orderRepository.existsByTableSession_IdAndStatusIn(sessionId,
+        List.of(OrderStatus.PENDING, OrderStatus.PREPARING))) {
+      throw new AppException(ErrorCode.TABLE_SESSION_HAS_ACTIVE_ORDERS);
+    }
+    session.setStatus(TableSessionStatus.CLOSE);
+    session.setClosedAt(LocalDateTime.now());
+    return TableSessionMapper.toResponse(session);
+  }
+
+  @Override
+  @Transactional
   public TableSessionAccessResponse grantGuestAccess(String qrCode) {
-    CafeTable table = cafeTableRepository.findByQrCode(qrCode)
+    // Serialize QR access, staff opening and closing on the same table row.
+    CafeTable table = cafeTableRepository.findByQrCodeForUpdate(qrCode)
         .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
 
     if (!Boolean.TRUE.equals(table.getIsActive())) {
@@ -75,7 +95,7 @@ public class TableSessionServiceImpl implements TableSessionService {
     }
 
     TableSession session = tableSessionRepository.findByTable_IdAndStatus(table.getId(), TableSessionStatus.OPEN)
-        .orElseThrow(() -> new AppException(ErrorCode.TABLE_SESSION_NOT_FOUND));
+        .orElseGet(() -> createSession(table));
 
     Instant expiresAt = Instant.now().plusSeconds(7200).truncatedTo(ChronoUnit.SECONDS);
 
@@ -87,6 +107,13 @@ public class TableSessionServiceImpl implements TableSessionService {
         .accessToken(accessToken)
         .expiresAt(expiresAt)
         .build();
+  }
+
+  private TableSession createSession(CafeTable table) {
+    TableSession session = new TableSession();
+    session.setTable(table);
+    session.setStatus(TableSessionStatus.OPEN);
+    return tableSessionRepository.save(session);
   }
 
   @Override

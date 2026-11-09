@@ -52,6 +52,7 @@ public enum ErrorCode {
   TABLE_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Bàn chưa có phiên phục vụ đang mở"),
   TABLE_SESSION_ALREADY_OPEN(HttpStatus.CONFLICT, "Bàn đã có phiên phục vụ đang mở"),
   TABLE_SESSION_CLOSED(HttpStatus.CONFLICT, "Phiên phục vụ đã đóng"),
+  TABLE_SESSION_HAS_ACTIVE_ORDERS(HttpStatus.CONFLICT, "Chưa thể kết thúc phiên: còn đơn chờ thanh toán hoặc đang chuẩn bị"),
   INVALID_TABLE_SESSION_TOKEN(HttpStatus.UNAUTHORIZED, "Token phiên không hợp lệ hoặc đã hết hạn"),
 
   // Tồn kho

@@ -1,6 +1,7 @@
 package com.example.cafe.feature.order.controller;
 
 import com.example.cafe.common.response.ApiResponse;
+import com.example.cafe.common.response.PageResponse;
 import com.example.cafe.feature.order.dto.request.CreateOrderRequest;
 import com.example.cafe.feature.order.dto.response.OrderResponse;
 import com.example.cafe.feature.order.service.OrderService;
@@ -38,5 +39,15 @@ public class GuestOrderController {
     return ResponseEntity.ok()
         .cacheControl(CacheControl.noStore())
         .body(ApiResponse.ok(response));
+  }
+
+  @GetMapping
+  public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> getOrders(
+      @RequestHeader(value = "X-Table-Session-Token", required = false) String token,
+      @RequestParam(name = "page", defaultValue = "0") int page,
+      @RequestParam(name = "size", defaultValue = "20") int size) {
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.noStore())
+        .body(ApiResponse.ok(orderService.getGuestOrders(token, page, size)));
   }
 }
