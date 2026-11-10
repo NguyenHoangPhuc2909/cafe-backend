@@ -59,21 +59,33 @@ public class SecurityConfig {
                   """);
             }))
         .authorizeHttpRequests(auth -> auth
+            // 1. API công khai
             .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+
             .requestMatchers(HttpMethod.GET, "/api/public/tables/*").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/public/tables/*/access").permitAll()
+
             .requestMatchers(HttpMethod.GET, "/api/guest/session").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/guest/orders").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/guest/orders").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/guest/orders/*").permitAll()
+
+            // 2. Chỉ admin
+            .requestMatchers("/api/admin/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
+
+            // 3. Chỉ staff
+            .requestMatchers(HttpMethod.POST, "/api/staff/orders").hasRole("STAFF")
             .requestMatchers(HttpMethod.POST, "/api/staff/orders/*/payments").hasRole("STAFF")
             .requestMatchers(HttpMethod.PATCH, "/api/staff/orders/*/complete").hasRole("STAFF")
-            .requestMatchers(HttpMethod.GET, "/api/orders/*").hasAnyRole("STAFF", "ADMIN")
-            .requestMatchers(HttpMethod.POST, "/api/staff/orders").hasRole("STAFF")
             .requestMatchers("/api/staff/revenue/**").hasRole("STAFF")
+
+            // 4. Dùng chung cho staff và admin
+            .requestMatchers(HttpMethod.GET, "/api/orders/*").hasAnyRole("STAFF", "ADMIN")
             .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "ADMIN")
-            .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+            
+            // 5. Các API còn lại yêu cầu đăng nhập
             .anyRequest().authenticated())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
