@@ -28,6 +28,9 @@ public class User {
   @Column(length = 20)
   private String role = "STAFF";
 
+  @Column(name = "is_active", nullable = false)
+  private boolean active = true;
+
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
 }
