@@ -29,6 +29,8 @@ import com.example.cafe.feature.order.service.OrderCreationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.cafe.common.enums.DrinkSize;
+import java.util.EnumMap;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -65,6 +67,8 @@ public class OrderCreationServiceImpl implements OrderCreationService {
 
     // 3. Tính nhu cầu, khóa nguyên liệu và kiểm tra đủ kho
     Map<Long, Double> requirements = collectIngredientRequirements(products, quantities);
+    addTakeawayCupRequirements(orderType, lines, requirements);
+
     Map<Long, Ingredient> ingredients = lockIngredients(requirements);
 
     validatePackagedStock(products, quantities);
@@ -200,6 +204,37 @@ public class OrderCreationServiceImpl implements OrderCreationService {
       }
     }
     return requirements;
+  }
+
+  private void addTakeawayCupRequirements(
+      OrderType orderType,
+      List<GuestOrderLines.Line> lines,
+      Map<Long, Double> requirements
+  ) {
+    if (orderType != OrderType.TAKEAWAY) {
+      return;
+    }
+
+    Map<DrinkSize, Double> cupQuantities = new EnumMap<>(DrinkSize.class);
+
+    for (var line : lines) {
+      if (line.product().getProductType() != ProductType.MADE_TO_ORDER) {
+        continue;
+      }
+
+      DrinkSize size = line.size() == null ? DrinkSize.M : line.size();
+
+      cupQuantities.merge(size, (double) line.quantity(), Double::sum);
+    }
+
+    for (var entry : cupQuantities.entrySet()) {
+      String code = entry.getKey() == DrinkSize.L ? "CUP_L" : "CUP_M";
+
+      Long ingredientId = ingredientRepository.findIdByCode(code)
+          .orElseThrow(() -> new AppException(ErrorCode.INGREDIENT_NOT_FOUND));
+
+      requirements.merge(ingredientId, entry.getValue(), Double::sum);
+    }
   }
 
   private Map<Long, Ingredient> lockIngredients(Map<Long, Double> requirements) {
