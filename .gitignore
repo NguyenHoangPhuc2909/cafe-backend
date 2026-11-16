@@ -38,3 +38,6 @@ build/
 
 # Documentation and its archive stay local
 /docs/archive/
+
+# Local database migration
+/src/main/resources/db/recipe-size-migration.sql
