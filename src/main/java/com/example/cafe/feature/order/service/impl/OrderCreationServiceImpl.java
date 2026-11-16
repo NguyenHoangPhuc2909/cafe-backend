@@ -8,6 +8,7 @@ import com.example.cafe.common.entity.inventory.StockReservation;
 import com.example.cafe.common.entity.order.Order;
 import com.example.cafe.common.entity.order.OrderItem;
 import com.example.cafe.common.entity.table.TableSession;
+import com.example.cafe.common.enums.DrinkSize;
 import com.example.cafe.common.enums.OrderPaymentStatus;
 import com.example.cafe.common.enums.OrderStatus;
 import com.example.cafe.common.enums.OrderType;
@@ -29,13 +30,12 @@ import com.example.cafe.feature.order.service.OrderCreationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.cafe.common.enums.DrinkSize;
-import java.util.EnumMap;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -66,7 +66,7 @@ public class OrderCreationServiceImpl implements OrderCreationService {
     var lines = GuestOrderLines.collect(request, products);
 
     // 3. Tính nhu cầu, khóa nguyên liệu và kiểm tra đủ kho
-    Map<Long, Double> requirements = collectIngredientRequirements(products, quantities);
+    Map<Long, Double> requirements = collectIngredientRequirements(lines);
     addTakeawayCupRequirements(orderType, lines, requirements);
 
     Map<Long, Ingredient> ingredients = lockIngredients(requirements);
@@ -162,9 +162,10 @@ public class OrderCreationServiceImpl implements OrderCreationService {
     return products;
   }
 
-  private Map<Long, Double> collectIngredientRequirements(Map<Long, Product> products, Map<Long, Integer> quantities) {
+  private Map<Long, Double> collectIngredientRequirements(List<GuestOrderLines.Line> lines) {
     Map<Long, Double> requirements = new TreeMap<>();
-    for (Product product : products.values()) {
+    for (var line : lines) {
+      Product product = line.product();
       if (product.getProductType() == ProductType.PACKAGED) {
         continue;
       }
@@ -173,10 +174,11 @@ public class OrderCreationServiceImpl implements OrderCreationService {
         throw new AppException(ErrorCode.PRODUCT_CONFIGURATION_INVALID);
       }
 
-      List<Recipe> recipes = recipeRepository.findByProductId(product.getId());
+      DrinkSize size = line.size() == null ? DrinkSize.M : line.size();
+      List<Recipe> recipes = recipeRepository.findByProductIdAndSize(product.getId(), size);
 
       if (recipes.isEmpty()) {
-        throw new AppException(ErrorCode.PRODUCT_CONFIGURATION_INVALID);
+        throw new AppException(ErrorCode.RECIPE_SIZE_NOT_CONFIGURED);
       }
 
       for (Recipe recipe : recipes) {
@@ -193,7 +195,7 @@ public class OrderCreationServiceImpl implements OrderCreationService {
 
         Long ingredientId = recipe.getIngredient().getId();
         double totalRequired = requirements.getOrDefault(ingredientId, 0.0)
-            + amountPerItem * quantities.get(product.getId());
+            + amountPerItem * line.quantity();
 
         if (!Double.isFinite(totalRequired)) {
           throw new AppException(

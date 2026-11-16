@@ -2,6 +2,7 @@ package com.example.cafe.feature.catalog.dto.request;
 
 import com.example.cafe.common.enums.ProductType;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,10 +13,12 @@ import java.math.BigDecimal;
 @Data
 public class ProductRequest {
   @NotBlank(message = "Tên sản phẩm không được để trống")
+  @Size(max = 255, message = "Tên sản phẩm tối đa 255 ký tự")
   private String name;
 
   @NotNull(message = "Giá sản phẩm không được để trống")
   @Min(value = 0, message = "Giá sản phẩm không hợp lệ (phải lớn hơn hoặc bằng 0)")
+  @Digits(integer = 10, fraction = 2, message = "Giá tối đa 10 chữ số nguyên và 2 chữ số thập phân")
   private BigDecimal price;
   private String description;
   private String imageUrl;

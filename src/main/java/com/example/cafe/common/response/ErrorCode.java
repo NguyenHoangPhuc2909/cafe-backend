@@ -20,6 +20,7 @@ public enum ErrorCode {
   PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm"),
   PRODUCT_INACTIVE(HttpStatus.CONFLICT, "Món đang ngừng bán"),
   PRODUCT_CONFIGURATION_INVALID(HttpStatus.CONFLICT, "Cấu hình loại món hoặc công thức không hợp lệ"),
+  RECIPE_SIZE_NOT_CONFIGURED(HttpStatus.CONFLICT, "Món chưa có công thức cho size đã chọn"),
 
   // Đơn hàng
   ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng"),

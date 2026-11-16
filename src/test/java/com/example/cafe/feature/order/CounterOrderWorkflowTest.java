@@ -55,7 +55,10 @@ class CounterOrderWorkflowTest {
   private final PaymentServiceImpl paymentService = new PaymentServiceImpl(
       payments.value, orders.value, users.value, reservations.value);
   private final Product bottle = new Product();
+  private final Product drink = new Product();
   private final Ingredient coffee = new Ingredient();
+  private final Ingredient mediumCup = new Ingredient();
+  private final Ingredient largeCup = new Ingredient();
   private final User staff = new User();
   private Order savedOrder;
   private Payment savedPayment;
@@ -72,19 +75,29 @@ class CounterOrderWorkflowTest {
     bottle.setPrice(new BigDecimal("15000"));
     bottle.setProductType(ProductType.PACKAGED);
     bottle.setStockQuantity(10);
-    Product drink = new Product();
     drink.setId(2L);
     drink.setName("Cà phê");
     drink.setPrice(new BigDecimal("30000"));
     drink.setProductType(ProductType.MADE_TO_ORDER);
     coffee.setId(3L);
     coffee.setStockQuantity(100.0);
+    mediumCup.setId(6L);
+    mediumCup.setStockQuantity(10.0);
+    largeCup.setId(7L);
+    largeCup.setStockQuantity(10.0);
     Recipe recipe = new Recipe();
     recipe.setIngredient(coffee);
     recipe.setQuantity(5.0);
     products.on("findByIdForUpdate", args -> Optional.of(args[0].equals(1L) ? bottle : drink));
-    recipes.on("findByProductId", args -> List.of(recipe));
-    ingredients.on("findByIdForUpdate", args -> Optional.of(coffee));
+    recipes.on("findByProductIdAndSize", args ->
+        args[1] == DrinkSize.M ? List.of(recipe) : List.of());
+    ingredients.on("findIdByCode", args -> switch ((String) args[0]) {
+      case "CUP_M" -> Optional.of(mediumCup.getId());
+      case "CUP_L" -> Optional.of(largeCup.getId());
+      default -> Optional.empty();
+    });
+    ingredients.on("findByIdForUpdate", args -> Optional.ofNullable(
+        Map.of(3L, coffee, 6L, mediumCup, 7L, largeCup).get(args[0])));
     orders.on("save", args -> {
       savedOrder = (Order) args[0];
       savedOrder.setId(10L);
@@ -132,7 +145,9 @@ class CounterOrderWorkflowTest {
     assertEquals(new BigDecimal("60000"), result.getTotalAmount());
     assertEquals(8, bottle.getStockQuantity());
     assertEquals(95.0, coffee.getStockQuantity());
-    assertEquals(2, held.size());
+    assertEquals(9.0, mediumCup.getStockQuantity());
+    assertEquals(10.0, largeCup.getStockQuantity());
+    assertEquals(3, held.size());
     assertTrue(held.stream().allMatch(r -> r.getStatus() == StockReservationStatus.HELD));
     assertTrue(sessions.calls.isEmpty());
   }
@@ -153,6 +168,8 @@ class CounterOrderWorkflowTest {
     assertFalse(service.expireUnpaidOrder(10L));
     assertEquals(8, bottle.getStockQuantity());
     assertEquals(95.0, coffee.getStockQuantity());
+    assertEquals(10.0, mediumCup.getStockQuantity());
+    assertEquals(10.0, largeCup.getStockQuantity());
     assertEquals(1, payments.calls.get("save"));
     assertTrue(sessions.calls.isEmpty());
   }
@@ -168,10 +185,120 @@ class CounterOrderWorkflowTest {
     assertEquals(OrderStatus.EXPIRED, savedOrder.getStatus());
     assertEquals(10, bottle.getStockQuantity());
     assertEquals(100.0, coffee.getStockQuantity());
+    assertEquals(10.0, mediumCup.getStockQuantity());
     assertTrue(held.stream().allMatch(r -> r.getStatus() == StockReservationStatus.RELEASED));
     assertFalse(service.expireUnpaidOrder(10L));
     assertEquals(10, bottle.getStockQuantity());
     assertEquals(100.0, coffee.getStockQuantity());
+    assertEquals(10.0, mediumCup.getStockQuantity());
+  }
+
+  @Test void mixedSizesUseSeparateRecipesAndReserveCupsForEachSize() {
+    drink.setSizeEnabled(true);
+    useSizedRecipes();
+    var request = request(OrderType.TAKEAWAY);
+    var lessIce = drinkItem(DrinkSize.M, 1);
+    lessIce.setIceLevel(DrinkOptionLevel.LESS);
+    request.setItems(List.of(drinkItem(DrinkSize.M, 1), lessIce, drinkItem(DrinkSize.L, 3)));
+
+    service.createStaffOrder("cashier", request);
+
+    assertEquals(66.0, coffee.getStockQuantity()); // 2 * 5 + 3 * 8
+    assertEquals(8.0, mediumCup.getStockQuantity());
+    assertEquals(7.0, largeCup.getStockQuantity());
+    assertEquals(3, held.size());
+    assertEquals(1, held.stream().filter(r -> r.getIngredient() == coffee).count());
+
+    paymentService.confirmPayment(10L, PaymentMethod.CASH, "cashier");
+    service.completeOrder(10L);
+    assertEquals(66.0, coffee.getStockQuantity());
+    assertEquals(8.0, mediumCup.getStockQuantity());
+    assertEquals(7.0, largeCup.getStockQuantity());
+    assertTrue(held.stream().allMatch(r -> r.getStatus() == StockReservationStatus.CONSUMED));
+  }
+
+  @Test void omittedSizeUsesMediumRecipeForSizedAndNonSizedDrinks() {
+    assertEquals(DrinkSize.M, new Recipe().getSize());
+    for (boolean sizes : List.of(false, true)) {
+      drink.setSizeEnabled(sizes);
+      coffee.setStockQuantity(100.0);
+      var result = service.createStaffOrder("cashier", request(OrderType.DINE_IN));
+      var orderedDrink = result.getItems().stream()
+          .filter(item -> item.getProductName().equals(drink.getName())).findFirst().orElseThrow();
+      assertEquals(sizes ? DrinkSize.M : null, orderedDrink.getSize());
+      assertEquals(95.0, coffee.getStockQuantity());
+      assertEquals(10.0, mediumCup.getStockQuantity());
+    }
+  }
+
+  @Test void missingLargeRecipeRejectsOrderBeforeReservingAnything() {
+    drink.setSizeEnabled(true);
+    var request = request(OrderType.TAKEAWAY);
+    request.setItems(List.of(drinkItem(DrinkSize.L, 1)));
+
+    var error = assertThrows(AppException.class,
+        () -> service.createStaffOrder("cashier", request));
+
+    assertEquals(ErrorCode.RECIPE_SIZE_NOT_CONFIGURED, error.getErrorCode());
+    assertEquals(100.0, coffee.getStockQuantity());
+    assertEquals(10.0, largeCup.getStockQuantity());
+    assertFalse(orders.calls.containsKey("save"));
+    assertFalse(reservations.calls.containsKey("saveAll"));
+  }
+
+  @Test void insufficientLargeCupsRejectOrderBeforeDeductingIngredients() {
+    drink.setSizeEnabled(true);
+    useSizedRecipes();
+    largeCup.setStockQuantity(0.0);
+    var request = request(OrderType.TAKEAWAY);
+    request.setItems(List.of(drinkItem(DrinkSize.M, 1), drinkItem(DrinkSize.L, 1)));
+
+    var error = assertThrows(AppException.class,
+        () -> service.createStaffOrder("cashier", request));
+
+    assertEquals(ErrorCode.NOT_ENOUGH_INGREDIENT, error.getErrorCode());
+    assertEquals(100.0, coffee.getStockQuantity());
+    assertEquals(10.0, mediumCup.getStockQuantity());
+    assertFalse(orders.calls.containsKey("save"));
+    assertFalse(reservations.calls.containsKey("saveAll"));
+  }
+
+  @Test void expiryRestoresBothSizesFromReservationsAfterRecipesChange() {
+    drink.setSizeEnabled(true);
+    useSizedRecipes();
+    var request = request(OrderType.TAKEAWAY);
+    request.setItems(List.of(drinkItem(DrinkSize.M, 2), drinkItem(DrinkSize.L, 3)));
+    service.createStaffOrder("cashier", request);
+    savedOrder.setPaymentExpiresAt(Instant.now().minusSeconds(1));
+    recipes.on("findByProductIdAndSize", args -> {
+      throw new AssertionError("Expiry must restore the stored quantities without reading recipes");
+    });
+
+    assertTrue(service.expireUnpaidOrder(10L));
+    assertFalse(service.expireUnpaidOrder(10L));
+    assertEquals(100.0, coffee.getStockQuantity());
+    assertEquals(10.0, mediumCup.getStockQuantity());
+    assertEquals(10.0, largeCup.getStockQuantity());
+  }
+
+  private CreateOrderRequest.ItemRequest drinkItem(DrinkSize size, int quantity) {
+    var item = new CreateOrderRequest.ItemRequest();
+    item.setProductId(drink.getId());
+    item.setSize(size);
+    item.setQuantity(quantity);
+    return item;
+  }
+
+  private void useSizedRecipes() {
+    var mediumRecipe = new Recipe();
+    mediumRecipe.setIngredient(coffee);
+    mediumRecipe.setQuantity(5.0);
+    var largeRecipe = new Recipe();
+    largeRecipe.setIngredient(coffee);
+    largeRecipe.setSize(DrinkSize.L);
+    largeRecipe.setQuantity(8.0);
+    recipes.on("findByProductIdAndSize", args ->
+        args[1] == DrinkSize.L ? List.of(largeRecipe) : List.of(mediumRecipe));
   }
 
   @Test void insufficientIngredientDoesNotCreateOrderOrHoldPackagedStock() {

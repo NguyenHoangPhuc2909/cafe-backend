@@ -74,6 +74,8 @@ public class SecurityConfig {
             // 2. Chỉ admin
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
             .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.POST, "/api/products").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.PUT, "/api/products/*").hasRole("ADMIN")
 
             // 3. Chỉ staff
             .requestMatchers(HttpMethod.POST, "/api/staff/orders").hasRole("STAFF")

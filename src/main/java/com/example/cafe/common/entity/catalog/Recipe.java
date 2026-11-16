@@ -1,9 +1,11 @@
 package com.example.cafe.common.entity.catalog;
 
 import com.example.cafe.common.entity.inventory.Ingredient;
+import com.example.cafe.common.enums.DrinkSize;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.ColumnDefault;
 
 @Data
 @Entity
@@ -23,4 +25,9 @@ public class Recipe {
 
   @Column(nullable = false)
   private Double quantity; // Lượng dùng bao nhiêu? (VD: 50 gram)
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "drink_size", nullable = false, length = 1)
+  @ColumnDefault("'M'")
+  private DrinkSize size = DrinkSize.M;
 }
