@@ -17,6 +17,8 @@ public enum ErrorCode {
 
   // Danh mục và sản phẩm
   CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy danh mục"),
+  CATEGORY_NAME_EXISTS(HttpStatus.CONFLICT, "Tên danh mục đã tồn tại"),
+  CATEGORY_IN_USE(HttpStatus.CONFLICT, "Danh mục đang có món. Hãy chuyển món sang danh mục khác trước khi xóa"),
   PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm"),
   PRODUCT_INACTIVE(HttpStatus.CONFLICT, "Món đang ngừng bán"),
   PRODUCT_CONFIGURATION_INVALID(HttpStatus.CONFLICT, "Cấu hình loại món hoặc công thức không hợp lệ"),
