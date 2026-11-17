@@ -12,6 +12,23 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
+  boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
+  @Query("""
+      SELECT i.id FROM Ingredient i
+      WHERE EXISTS (SELECT r.id FROM Recipe r WHERE r.ingredient = i)
+         OR EXISTS (SELECT m.id FROM StockMovement m WHERE m.ingredient = i)
+         OR EXISTS (SELECT s.id FROM StockReservation s WHERE s.ingredient = i)
+      """)
+  List<Long> findReferencedIds();
+
+  @Query("""
+      SELECT (COUNT(i) > 0) FROM Ingredient i WHERE i.id = :id AND (
+          EXISTS (SELECT r.id FROM Recipe r WHERE r.ingredient = i)
+          OR EXISTS (SELECT m.id FROM StockMovement m WHERE m.ingredient = i)
+          OR EXISTS (SELECT s.id FROM StockReservation s WHERE s.ingredient = i))
+      """)
+  boolean isReferenced(@Param("id") Long id);
   // Phục vụ cho chức năng báo cáo đầu/cuối ca.
   @Query("SELECT i FROM Ingredient i WHERE i.stockQuantity <= i.minThreshold")
   List<Ingredient> findLowStockIngredients();

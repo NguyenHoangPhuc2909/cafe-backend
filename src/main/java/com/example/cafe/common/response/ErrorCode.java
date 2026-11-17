@@ -37,6 +37,10 @@ public enum ErrorCode {
   OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "Sản phẩm đã hết hàng hoặc không đủ số lượng"),
   NOT_ENOUGH_INGREDIENT(HttpStatus.BAD_REQUEST, "Không đủ nguyên liệu để pha chế"),
   INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy nguyên liệu"),
+  INGREDIENT_NAME_EXISTS(HttpStatus.CONFLICT, "Tên nguyên liệu đã tồn tại"),
+  INGREDIENT_IN_USE(HttpStatus.CONFLICT, "Nguyên liệu còn tồn kho, công thức hoặc lịch sử sử dụng; không thể xóa"),
+  INGREDIENT_UNIT_LOCKED(HttpStatus.CONFLICT, "Không thể đổi đơn vị khi nguyên liệu đã có tồn kho, công thức hoặc lịch sử sử dụng"),
+  SYSTEM_INGREDIENT_LOCKED(HttpStatus.CONFLICT, "Ly theo size là nguyên liệu hệ thống; chỉ được sửa tên và ngưỡng cảnh báo"),
   INVENTORY_DATA_INVALID(HttpStatus.CONFLICT, "Dữ liệu tồn kho hoặc giữ hàng không hợp lệ"),
 
   // Bàn
