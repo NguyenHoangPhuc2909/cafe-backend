@@ -7,6 +7,7 @@ import com.example.cafe.common.enums.OrderStatus;
 import jakarta.persistence.LockModeType;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,6 +51,23 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
   Page<Order> findByTableSession_IdOrderByCreatedAtDescIdDesc(Long sessionId, Pageable pageable);
 
   boolean existsByTableSession_IdAndStatusIn(Long sessionId, List<OrderStatus> statuses);
+
+  interface OrderStatusCount {
+    OrderStatus getStatus();
+    long getOrderCount();
+  }
+
+  @Query("""
+      SELECT o.status AS status, COUNT(o) AS orderCount
+      FROM Order o
+      WHERE o.createdAt >= :from
+        AND o.createdAt < :until
+      GROUP BY o.status
+      """)
+  List<OrderStatusCount> countByStatusInRange(
+      @Param("from") LocalDateTime from,
+      @Param("until") LocalDateTime until
+  );
 
   // Danh sách đơn
   @Query("""
