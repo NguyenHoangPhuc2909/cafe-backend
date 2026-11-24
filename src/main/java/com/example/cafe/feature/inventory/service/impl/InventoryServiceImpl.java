@@ -177,12 +177,14 @@ public class InventoryServiceImpl implements InventoryService {
       LocalDate fromDate,
       LocalDate toDate,
       Long ingredientId,
-      Long productId
+      Long productId,
+      Long performedById
   ) {
     if ((fromDate != null && toDate != null && fromDate.isAfter(toDate))
         || LocalDate.MAX.equals(toDate)
         || (ingredientId != null && ingredientId <= 0)
         || (productId != null && productId <= 0)
+        || (performedById != null && performedById <= 0)
         || (ingredientId != null && productId != null)) {
       throw new AppException(ErrorCode.INVALID_STOCK_HISTORY_QUERY);
     }
@@ -221,6 +223,12 @@ public class InventoryServiceImpl implements InventoryService {
       if (productId != null) {
         conditions.add(
             cb.equal(root.get("product").get("id"), productId)
+        );
+      }
+
+      if (performedById != null) {
+        conditions.add(
+            cb.equal(root.get("performedBy").get("id"), performedById)
         );
       }
 

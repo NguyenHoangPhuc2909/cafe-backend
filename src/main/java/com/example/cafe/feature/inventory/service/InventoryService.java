@@ -18,6 +18,7 @@ public interface InventoryService {
       LocalDate fromDate,
       LocalDate toDate,
       Long ingredientId,
-      Long productId
+      Long productId,
+      Long performedById
   );
 }

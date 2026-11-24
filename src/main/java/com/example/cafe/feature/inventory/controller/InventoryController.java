@@ -60,7 +60,8 @@ public class InventoryController {
       LocalDate toDate,
 
       @RequestParam(required = false) Long ingredientId,
-      @RequestParam(required = false) Long productId
+      @RequestParam(required = false) Long productId,
+      @RequestParam(required = false) Long performedById
   ) {
     return ResponseEntity.ok()
         .cacheControl(CacheControl.noStore())
@@ -71,7 +72,8 @@ public class InventoryController {
                 fromDate,
                 toDate,
                 ingredientId,
-                productId
+                productId,
+                performedById
             )
         ));
   }

@@ -81,6 +81,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/staff/orders").hasRole("STAFF")
             .requestMatchers(HttpMethod.POST, "/api/staff/orders/*/payments").hasRole("STAFF")
             .requestMatchers(HttpMethod.PATCH, "/api/staff/orders/*/complete").hasRole("STAFF")
+            .requestMatchers(HttpMethod.POST, "/api/staff/inventory/receipts").hasRole("STAFF")
             .requestMatchers("/api/staff/revenue/**").hasRole("STAFF")
 
             // 4. Dùng chung cho staff và admin
