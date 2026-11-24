@@ -22,4 +22,6 @@ public interface CafeTableRepository extends JpaRepository<CafeTable, Long> {
   Optional<CafeTable> findByIdForUpdate(@Param("id") Long id);
 
   boolean existsByName(String name);
+
+  boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
 }

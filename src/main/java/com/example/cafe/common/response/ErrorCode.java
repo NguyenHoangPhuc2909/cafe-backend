@@ -47,6 +47,8 @@ public enum ErrorCode {
   TABLE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy bàn"),
   TABLE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Tên bàn hoặc mã QR đã tồn tại"),
   TABLE_INACTIVE(HttpStatus.CONFLICT, "Bàn đang ngừng sử dụng"),
+  TABLE_HAS_OPEN_SESSION(HttpStatus.CONFLICT, "Bàn đang có phiên phục vụ đang mở; hãy kết thúc phiên trước khi ngừng sử dụng hoặc xóa"),
+  TABLE_IN_USE(HttpStatus.CONFLICT, "Bàn đã có lịch sử phục vụ; không thể xóa, hãy chuyển sang ngừng sử dụng"),
 
   // Thanh toán
   PAYMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "Bạn không có quyền xác nhận thanh toán"),
