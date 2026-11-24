@@ -56,6 +56,7 @@ public enum ErrorCode {
   PAYMENT_EXPIRED(HttpStatus.CONFLICT, "Đơn hàng đã quá hạn thanh toán"),
   PAYMENT_CONFLICT(HttpStatus.CONFLICT, "Đơn đã có thông tin thanh toán khác"),
   PAYMENT_DATA_INVALID(HttpStatus.CONFLICT, "Dữ liệu thanh toán hoặc giữ hàng không hợp lệ"),
+  INVALID_REPORT_QUERY(HttpStatus.BAD_REQUEST, "Khoảng ngày hoặc tham số báo cáo không hợp lệ"),
 
   // Phiên phục vụ và token khách
   TABLE_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Bàn chưa có phiên phục vụ đang mở"),

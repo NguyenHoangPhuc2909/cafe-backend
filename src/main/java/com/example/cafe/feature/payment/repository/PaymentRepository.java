@@ -32,6 +32,27 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
   List<MethodTotal> summarizePersonalDay(@Param("username") String username,
       @Param("from") Instant from, @Param("until") Instant until);
 
+  interface CompletedPaymentSlice {
+    PaymentMethod getMethod();
+    BigDecimal getAmount();
+    Instant getPaidAt();
+  }
+
+  @Query("""
+      SELECT p.method AS method, p.amount AS amount, p.paidAt AS paidAt
+      FROM Payment p
+      JOIN p.order o
+      WHERE o.status = com.example.cafe.common.enums.OrderStatus.COMPLETED
+        AND o.paymentStatus = com.example.cafe.common.enums.OrderPaymentStatus.PAID
+        AND p.paidAt >= :from
+        AND p.paidAt < :until
+      ORDER BY p.paidAt ASC, p.id ASC
+      """)
+  List<CompletedPaymentSlice> findCompletedPaymentsInRange(
+      @Param("from") Instant from,
+      @Param("until") Instant until
+  );
+
   Page<Payment> findByConfirmedBy_UsernameAndPaidAtGreaterThanEqualAndPaidAtLessThanOrderByPaidAtDescIdDesc(
       String username, Instant from, Instant until, Pageable pageable);
 }
